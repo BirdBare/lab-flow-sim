@@ -1,7 +1,7 @@
 import streamlit
 from utils import SessionStateManager, webapp_menu
 
-streamlit.set_page_config(page_title="Home")
+streamlit.set_page_config(page_title="Processes")
 
 webapp_menu()
 

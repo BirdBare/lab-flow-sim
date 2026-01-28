@@ -1,0 +1,4 @@
+django
+streamlit
+streamlit-flow-component
+simpy

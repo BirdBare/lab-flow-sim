@@ -1,7 +1,7 @@
 import streamlit
 from utils import SessionStateManager, webapp_menu
 
-streamlit.set_page_config(page_title="Workcells")
+streamlit.set_page_config(page_title="Workcells",layout="wide")
 
 webapp_menu()
 

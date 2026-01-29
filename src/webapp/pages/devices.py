@@ -75,13 +75,16 @@ with SessionStateManager("edit_device_functions") as session_state_manager:
 
     streamlit.text("Devices can be added below. If a device has associated functions they will be listed. Click a device name to edit it.")
     
+    with streamlit.container(width=400):
+        device_search_value = streamlit.text_input("Device Search")
+
     with streamlit.container(gap=None,horizontal_alignment="center"):
         streamlit.divider()
         if streamlit.button("New Device"):
             streamlit.session_state["edit_device_functions"] = []
             edit_device(Device(name="New Device"))
             
-    devices = list(Device.objects.order_by(Lower("name")).all())
+    devices = list(Device.objects.filter(name__icontains=device_search_value).order_by(Lower("name")).all())
     device_chunks = [devices[i:i + 3] for i in range(0, len(devices), 3)]
 
     with streamlit.container(horizontal_alignment="center"):

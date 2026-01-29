@@ -116,14 +116,5 @@ with SessionStateManager("edit_device_functions") as session_state_manager:
                                 key=f"device_function_{function.id}_execution_time_formula",
                                 disabled=True
                                 )
-                            
-                    with streamlit.container(horizontal_alignment="right"):
-                        streamlit.button(
-                            "",
-                            key=f"device_{device.id}_delete",
-                            icon=":material/delete:",
-                            type="tertiary",
-                            on_click=lambda device: device.delete(),
-                            args=(device,)
-                        )
+
                     streamlit.space()

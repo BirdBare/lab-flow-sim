@@ -99,13 +99,18 @@ with SessionStateManager("edit_device_functions") as session_state_manager:
                         streamlit.divider()
                     
                     for function in Function.objects.filter(device=device).order_by(Lower("name")).all():
-                        with streamlit.expander(function.name),streamlit.container(gap=None):
-                            streamlit.text("Execution Time Formula:")
+                        with streamlit.expander(function.name):
+                            streamlit.selectbox(
+                                "Categorization",
+                                [function.category],
+                                key=f"device_function_{function.id}_categorization",
+                                disabled=True
+                                )
+                            
                             streamlit.text_input(
-                                "",
+                                "Execution Time Formula",
                                 function.execution_time_formula,
                                 key=f"device_function_{function.id}_execution_time_formula",
-                                label_visibility="collapsed",
                                 disabled=True
                                 )
                             

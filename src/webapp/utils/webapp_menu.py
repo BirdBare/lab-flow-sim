@@ -7,7 +7,6 @@ def webapp_menu():
             streamlit.page_link("home.py",label="Home")
             streamlit.page_link("pages/devices.py",label="Devices")
             streamlit.page_link("pages/workcells.py",label="Workcells")
-            streamlit.page_link("pages/processes.py",label="Processes")
             streamlit.page_link("pages/workflows.py",label="Workflows")
             streamlit.page_link("pages/simulation.py",label="Simulation")
         streamlit.divider()

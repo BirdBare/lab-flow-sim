@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "orm.device",
+    "orm.workcell",
 ]
 
 MIDDLEWARE = [

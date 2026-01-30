@@ -12,3 +12,6 @@ class AssignedDevice(models.Model):
     workcell = models.ForeignKey(to=Workcell, on_delete=models.CASCADE)
 
     device = models.ForeignKey(to=Device, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"workcell=[{self.workcell}] device=[{self.device}]"

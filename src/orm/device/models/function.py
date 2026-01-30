@@ -15,4 +15,4 @@ class Function(models.Model):
     execution_time_formula = models.CharField(max_length=255)
 
     def __str__(self) -> str:
-        return self.name
+        return f"device=[{self.device}] name={self.name}"

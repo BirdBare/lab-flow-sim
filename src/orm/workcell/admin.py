@@ -1,3 +1,6 @@
 from django.contrib import admin
+from .models import Workcell,AssignedDevice,DeviceConnection
 
-# Register your models here.
+admin.site.register(Workcell)
+admin.site.register(AssignedDevice)
+admin.site.register(DeviceConnection)

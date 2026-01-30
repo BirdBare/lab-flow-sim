@@ -8,3 +8,6 @@ class Node(models.Model):
 
     x_pos = models.PositiveIntegerField()
     y_pos = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"x_pos={self.x_pos} y_pos={self.y_pos}"

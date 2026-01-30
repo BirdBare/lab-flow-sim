@@ -9,3 +9,6 @@ class AssignedDeviceNode(models.Model):
 
     assigned_device = models.ForeignKey(to=AssignedDevice,on_delete=models.CASCADE)
     node = models.ForeignKey(to=Node,on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"assigned_device=[{self.assigned_device}] node=[{self.node}]"

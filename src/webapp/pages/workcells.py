@@ -1,7 +1,14 @@
 import streamlit
+from tabs.workcell_diagram_tab import render_workcell_diagram_tab, reset_workcell_streamlit_flow_state
 from utils import SessionStateManager, webapp_menu
+
 from orm.workcell.models import Workcell
-from tabs.workcell_diagram_tab import render_workcell_diagram_tab
+
+
+def selectbox_workcell_on_change():
+    streamlit.session_state["workcell_is_editable"] = False
+    reset_workcell_streamlit_flow_state(streamlit.session_state["selectbox_workcell"])
+
 
 streamlit.set_page_config(page_title="Workcells", layout="wide")
 
@@ -15,13 +22,7 @@ with SessionStateManager() as session_state_manager:
     )
 
     session_state_manager.add_persistent_keys("workcell_is_editable")
-    workcell_is_editable = streamlit.session_state.get("workcell_is_editable",False)
-
-    def del_key():
-        try:
-            del streamlit.session_state["workcell_streamlit_flow_state"]
-        except:
-            pass
+    workcell_is_editable = streamlit.session_state.get("workcell_is_editable", False)
 
     # Render selectbox
     session_state_manager.add_persistent_keys("selectbox_workcell")
@@ -35,23 +36,27 @@ with SessionStateManager() as session_state_manager:
         disabled=workcell_is_editable,
         format_func=lambda x: x.name,
         width=800,
-        on_change=del_key
+        on_change=selectbox_workcell_on_change,
     )
 
     with streamlit.container(horizontal=True):
         if workcell_is_editable is False:
-            streamlit.button("New Workcell", width=150, on_click=lambda:None)
+            streamlit.button("New Workcell", width=150, on_click=lambda: None)
             if workcell is not None:
+
                 def fun():
                     streamlit.session_state["workcell_is_editable"] = True
+
                 streamlit.button("Edit Workcell", width=150, on_click=fun)
         else:
-            streamlit.button("Save Workcell", width=150, on_click=lambda:None)
+            streamlit.button("Save Workcell", width=150, on_click=lambda: None)
+
             def fun():
                 streamlit.session_state["workcell_is_editable"] = False
+
             streamlit.button("Cancel Edits", width=150, on_click=fun)
             if workcell.name != "New Workcell":
-                streamlit.button("Delete Workcell", width=150, on_click=lambda:None)
+                streamlit.button("Delete Workcell", width=150, on_click=lambda: None)
 
     if workcell is None:
         streamlit.stop()
@@ -59,7 +64,7 @@ with SessionStateManager() as session_state_manager:
     streamlit.session_state["workcell_error_container"] = streamlit.container()
 
     session_state_manager.add_persistent_keys("text_input_workcell_name")
-    
+
     with streamlit.container(horizontal_alignment="center"):
         if workcell_is_editable:
             streamlit.text_input(
@@ -67,10 +72,10 @@ with SessionStateManager() as session_state_manager:
                 width=800,
                 disabled=not workcell_is_editable,
                 key="text_input_workcell_name",
-                value=workcell.name
+                value=workcell.name,
             )
-    
+
     workcell_diagram_tab, workcell_processes_tab = streamlit.tabs(["Workcell Diagram", "Workcell Processes"])
 
     with workcell_diagram_tab:
-        render_workcell_diagram_tab(session_state_manager,workcell_is_editable,workcell)
+        render_workcell_diagram_tab(session_state_manager, workcell_is_editable, workcell)

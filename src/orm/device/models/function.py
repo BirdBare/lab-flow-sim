@@ -13,12 +13,13 @@ class Function(models.Model):
     name = models.CharField(max_length=255)
 
     category = models.CharField(
-        max_length=255, choices=(("Spatial", "Spatial"), ("Material", "Material"), ("Informational", "Informational"))
+        max_length=255,
+        choices=(("Spatial", "Spatial"), ("Material", "Material"), ("Informational", "Informational")),
     )
 
     execution_time_formula = models.CharField(max_length=255)
 
-    comment = models.TextField()
+    comments = models.TextField()
 
     def __str__(self) -> str:
         return f"device=[{self.device}] name={self.name}"

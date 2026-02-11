@@ -8,14 +8,14 @@ from orm.device.models import Device
 from orm.flow_diagram.models import AssignedDeviceNode
 from orm.workcell.models import AssignedDevice, DeviceConnection, Workcell
 
-_TAB_PREFIX = "workcell_diagram"
+_KEY_PREFIX = "workcell_diagram"
 
 
 #
 # WORKCELL_IS_EDITABLE
 #
 def get_is_editable_key() -> str:
-    return f"{_TAB_PREFIX}_is_editable"
+    return f"{_KEY_PREFIX}_is_editable"
 
 
 def set_is_editable(value: bool):
@@ -30,7 +30,7 @@ def get_is_editable() -> bool:
 # WORKCELL_STREAMLIT_FLOW_SELECTED_ID
 #
 def get_streamlit_flow_selected_id_key() -> str:
-    return f"{_TAB_PREFIX}_streamlit_flow_selected_id"
+    return f"{_KEY_PREFIX}_streamlit_flow_selected_id"
 
 
 def set_streamlit_flow_selected_id(value: None | str):
@@ -45,7 +45,7 @@ def get_streamlit_flow_selected_id() -> None | str:
 # WORKCELL_STREAMLIT_FLOW_NODE_KEY
 #
 def get_flow_node_dict_key() -> str:
-    return f"{_TAB_PREFIX}_streamlit_flow_node_dict"
+    return f"{_KEY_PREFIX}_streamlit_flow_node_dict"
 
 
 def get_flow_node_dict() -> dict[str, StreamlitFlowNode]:
@@ -59,7 +59,7 @@ def get_flow_node_dict() -> dict[str, StreamlitFlowNode]:
 # WORKCELL_STREAMLIT_ASSIGNED_DEVICE_KEY
 #
 def get_assigned_device_dict_key() -> str:
-    return f"{_TAB_PREFIX}_assigned_device_dict"
+    return f"{_KEY_PREFIX}_assigned_device_dict"
 
 
 def get_assigned_device_dict() -> dict[str, AssignedDevice]:
@@ -73,7 +73,7 @@ def get_assigned_device_dict() -> dict[str, AssignedDevice]:
 # WORKCELL_STREAMLIT_FLOW_STATE
 #
 def get_streamlit_flow_state_key() -> str:
-    return f"{_TAB_PREFIX}_streamlit_flow_state"
+    return f"{_KEY_PREFIX}_streamlit_flow_state"
 
 
 def set_streamlit_flow_state(workcell_streamlit_flow_state: StreamlitFlowState):
@@ -207,7 +207,7 @@ def render_tab(
         if not get_is_editable():
             streamlit.button(
                 "Enable Edits",
-                key=f"button_{_TAB_PREFIX}_enable_edits",
+                key=f"button_{_KEY_PREFIX}_enable_edits",
                 on_click=callback_button_enable_edits,
                 width=120,
             )
@@ -215,13 +215,13 @@ def render_tab(
         else:
             streamlit.button(
                 "Discard Edits",
-                key=f"button_{_TAB_PREFIX}_discard_edits",
+                key=f"button_{_KEY_PREFIX}_discard_edits",
                 on_click=callback_button_discard_edits,
                 width=120,
             )
             streamlit.button(
                 "Save Edits",
-                key=f"button_{_TAB_PREFIX}_save_edits",
+                key=f"button_{_KEY_PREFIX}_save_edits",
                 on_click=callback_button_save_edits,
                 args=(workcell,),
                 width=120,

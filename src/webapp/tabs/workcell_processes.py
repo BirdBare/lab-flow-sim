@@ -3,7 +3,7 @@ from utils import SessionStateManager
 
 from orm.workcell.models import Workcell
 
-_KEY_PREFIX = "workcell_metadata"
+_KEY_PREFIX = "workcell_processes"
 
 
 #
@@ -78,7 +78,7 @@ def set_text_area_workcell_comments(value: str):
 #
 # TAB
 #
-def render_tab(
+def render_workcell_metadata_tab(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):

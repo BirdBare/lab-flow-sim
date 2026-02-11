@@ -46,6 +46,12 @@ def edit_device(device: Device):
                 key=f"function_{function.id}_execution_time_formula",
             )
 
+            function.comment = streamlit.text_area(
+                "Comments",
+                value=function.comment,
+                key=f"function_{function.id}_comments",
+            )
+
             with streamlit.container(horizontal_alignment="right"):
                 streamlit.button(
                     "",
@@ -128,5 +134,13 @@ with SessionStateManager("edit_device_functions") as session_state_manager:
                                 key=f"device_function_{function.id}_execution_time_formula",
                                 disabled=True,
                             )
+
+                            if function.comment.replace(" ", "").replace("\n","") != "":
+                                streamlit.text_area(
+                                    "Comments",
+                                    function.comment,
+                                    key=f"device_function_{function.id}_comment",
+                                    disabled=True,
+                                )
 
                     streamlit.space()

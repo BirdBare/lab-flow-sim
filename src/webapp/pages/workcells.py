@@ -1,9 +1,8 @@
 import streamlit
-from tabs.workcell_diagram_tab import render_workcell_diagram_tab, reset_workcell_streamlit_flow_state
-from tabs.workcell_metadata_tab import render_workcell_metadata_tab, set_workcell_metadata_tab_is_editable
 from utils import SessionStateManager, webapp_menu
 
 from orm.workcell.models import Workcell
+from webapp.tabs import workcell_diagram, workcell_metadata
 
 
 #
@@ -13,17 +12,18 @@ def get_workcell_selectbox_key() -> str:
     return "selectbox_workcell"
 
 
-def get_workcell_selectbox() -> Workcell:
+def get_selectbox_workcell() -> Workcell:
     return streamlit.session_state[get_workcell_selectbox_key()]
 
 
-def set_workcell_selectbox(workcell: Workcell):
+def set_selectbox_workcell(workcell: Workcell):
     streamlit.session_state[get_workcell_selectbox_key()] = workcell
 
 
 def selectbox_workcell_on_change():
-    set_workcell_metadata_tab_is_editable(False)
-    reset_workcell_streamlit_flow_state(streamlit.session_state["selectbox_workcell"])
+    workcell_metadata.set_is_editable(False)
+    workcell_diagram.set_is_editable(False)
+    workcell_diagram.reset_streamlit_flow_state(get_selectbox_workcell())
 
 
 streamlit.set_page_config(page_title="Workcells", layout="wide")
@@ -64,10 +64,10 @@ with SessionStateManager() as session_state_manager:
     )
 
     with workcell_metadata_tab:
-        render_workcell_metadata_tab(session_state_manager, workcell)
+        workcell_metadata.render_workcell_metadata_tab(session_state_manager, workcell)
 
     with workcell_diagram_tab:
-        render_workcell_diagram_tab(session_state_manager, workcell)
+        workcell_diagram.render_workcell_diagram_tab(session_state_manager, workcell)
 
     with workcell_processes_tab:
         ...

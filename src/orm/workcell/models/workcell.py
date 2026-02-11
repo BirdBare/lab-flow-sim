@@ -8,5 +8,7 @@ class Workcell(models.Model):
 
     name = models.CharField(max_length=255)
 
+    comments = models.TextField()
+
     def __str__(self):
         return f"name={self.name}"

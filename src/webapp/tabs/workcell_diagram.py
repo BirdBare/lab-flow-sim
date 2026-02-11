@@ -190,7 +190,7 @@ def callback_button_delete():
 #
 # TAB
 #
-def render_workcell_diagram_tab(
+def render_tab(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):

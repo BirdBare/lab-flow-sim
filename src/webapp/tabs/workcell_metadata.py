@@ -78,7 +78,7 @@ def set_text_area_workcell_comments(value: str):
 #
 # TAB
 #
-def render_workcell_metadata_tab(
+def render_tab(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):

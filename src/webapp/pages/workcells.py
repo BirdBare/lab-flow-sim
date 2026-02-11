@@ -64,10 +64,10 @@ with SessionStateManager() as session_state_manager:
     )
 
     with workcell_metadata_tab:
-        workcell_metadata.render_workcell_metadata_tab(session_state_manager, workcell)
+        workcell_metadata.render_tab(session_state_manager, workcell)
 
     with workcell_diagram_tab:
-        workcell_diagram.render_workcell_diagram_tab(session_state_manager, workcell)
+        workcell_diagram.render_tab(session_state_manager, workcell)
 
     with workcell_processes_tab:
         ...

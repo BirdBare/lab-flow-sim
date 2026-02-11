@@ -68,6 +68,10 @@ def edit_device(device: Device):
         if streamlit.button("Save"):
             device.save()
 
+            for function in Function.objects.filter(device=device).all():
+                if function not in functions:
+                    function.delete()
+
             for function in functions:
                 function.save()
 

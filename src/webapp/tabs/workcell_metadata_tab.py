@@ -37,6 +37,10 @@ def callback_button_workcell_metadata_tab_save_edits(workcell: Workcell):
     workcell.comments = get_workcell_comments_field()
     workcell.save()
 
+    from pages.workcells import set_workcell_selectbox
+
+    set_workcell_selectbox(workcell)
+
     set_workcell_metadata_tab_is_editable(False)
 
 

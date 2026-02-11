@@ -46,9 +46,9 @@ def edit_device(device: Device):
                 key=f"function_{function.id}_execution_time_formula",
             )
 
-            function.comment = streamlit.text_area(
+            function.comments = streamlit.text_area(
                 "Comments",
-                value=function.comment,
+                value=function.comments,
                 key=f"function_{function.id}_comments",
             )
 
@@ -135,10 +135,10 @@ with SessionStateManager("edit_device_functions") as session_state_manager:
                                 disabled=True,
                             )
 
-                            if function.comment.replace(" ", "").replace("\n","") != "":
+                            if function.comments.replace(" ", "").replace("\n", "") != "":
                                 streamlit.text_area(
                                     "Comments",
-                                    function.comment,
+                                    function.comments,
                                     key=f"device_function_{function.id}_comment",
                                     disabled=True,
                                 )

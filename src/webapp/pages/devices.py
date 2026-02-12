@@ -128,17 +128,19 @@ with SessionStateManager("edit_device_functions") as session_state_manager:
                                 disabled=True,
                             )
 
+                            streamlit.session_state[f"device_function_{function.id}_execution_time_formula"] = (
+                                function.execution_time_formula
+                            )
                             streamlit.text_input(
                                 "Execution Time Formula (s)",
-                                function.execution_time_formula,
                                 key=f"device_function_{function.id}_execution_time_formula",
                                 disabled=True,
                             )
 
                             if function.comments.replace(" ", "").replace("\n", "") != "":
+                                streamlit.session_state[f"device_function_{function.id}_comment"] = function.comments
                                 streamlit.text_area(
                                     "Comments",
-                                    function.comments,
                                     key=f"device_function_{function.id}_comment",
                                     disabled=True,
                                 )

@@ -34,7 +34,7 @@ def edit_device(device: Device):
             )
 
             function.category = streamlit.selectbox(
-                "Categorization",
+                "Functional Category",
                 ["Material", "Spatial"],
                 key=f"function_{function.id}_categorization",
                 label_visibility="visible",
@@ -122,14 +122,14 @@ with SessionStateManager("edit_device_functions") as session_state_manager:
                     for function in Function.objects.filter(device=device).order_by(Lower("name")).all():
                         with streamlit.expander(function.name):
                             streamlit.selectbox(
-                                "Categorization",
+                                "Functional Category",
                                 [function.category],
                                 key=f"device_function_{function.id}_categorization",
                                 disabled=True,
                             )
 
                             streamlit.text_input(
-                                "Execution Time Formula",
+                                "Execution Time Formula (s)",
                                 function.execution_time_formula,
                                 key=f"device_function_{function.id}_execution_time_formula",
                                 disabled=True,

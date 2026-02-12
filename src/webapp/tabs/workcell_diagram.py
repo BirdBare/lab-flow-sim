@@ -8,6 +8,8 @@ from orm.device.models import Device
 from orm.flow_diagram.models import AssignedDeviceNode
 from orm.workcell.models import AssignedDevice, DeviceConnection, Workcell
 
+from . import workcell_labware
+
 _KEY_PREFIX = "workcell_diagram"
 
 
@@ -250,17 +252,18 @@ def render_tab(
             }
 
     # Create the canvas
-    set_streamlit_flow_state(
-        streamlit_flow(
-            "workcell_device_diagram",
-            get_streamlit_flow_state(),
-            allow_new_edges=get_is_editable(),
-            get_node_on_click=get_is_editable(),
-            get_edge_on_click=get_is_editable(),
-            enable_pane_menu=get_is_editable(),
-            hide_watermark=True,
-        ),
-    )
+    if not workcell_labware.get_dialog_is_shown():
+        set_streamlit_flow_state(
+            streamlit_flow(
+                "workcell_device_diagram",
+                get_streamlit_flow_state(),
+                allow_new_edges=get_is_editable(),
+                get_node_on_click=get_is_editable(),
+                get_edge_on_click=get_is_editable(),
+                enable_pane_menu=get_is_editable(),
+                hide_watermark=True,
+            ),
+        )
 
     if get_is_editable():
         if get_streamlit_flow_state().selected_id is not None:

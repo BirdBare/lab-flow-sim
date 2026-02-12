@@ -1,133 +1,78 @@
 import streamlit
+from django.db.models.functions import Lower
 from utils import SessionStateManager
 
+from orm.labware.models import Labware
 from orm.workcell.models import Workcell
 
 _KEY_PREFIX = "workcell_labware"
 
 
-#
-# WORKCELL_METADATA_TAB_IS_EDITABLE
-#
-def get_is_editable_key() -> str:
-    return f"{_KEY_PREFIX}_is_editable"
+def get_dialog_is_shown_key() -> str:
+    return f"{_KEY_PREFIX}_dialog_is_show"
 
 
-def set_is_editable(value: bool):
-    streamlit.session_state[get_is_editable_key()] = value
+def get_dialog_is_shown() -> bool:
+    return streamlit.session_state.get(get_dialog_is_shown_key(), False)
 
 
-def get_is_editable() -> bool:
-    return streamlit.session_state.get(get_is_editable_key(), False)
+def set_dialog_is_shown(value: bool):
+    streamlit.session_state[get_dialog_is_shown_key()] = value
 
 
-#
-# BUTTON CALLBACKS
-#
-def callback_button_enable_edits():
-    set_is_editable(True)
+@streamlit.dialog("Labware Editor", dismissible=False)
+def edit_labware(labware: Labware):
+    with streamlit.container(gap=None):
+        labware.name = streamlit.text_input("Device Name", value=labware.name, key=f"labware_{labware.id}_name")
 
+        streamlit.divider()
 
-def callback_button_discard_edits():
-    set_is_editable(False)
+    with streamlit.container(horizontal=True):
+        if streamlit.button("Cancel"):
+            set_dialog_is_shown(False)
+            streamlit.rerun()
 
+        if not labware._state.adding:
+            if streamlit.button("Delete"):
+                labware.delete()
+                set_dialog_is_shown(False)
+                streamlit.rerun()
 
-def callback_button_save_edits():
-    from pages.workcells import get_selectbox_workcell, set_selectbox_workcell
-
-    workcell = get_selectbox_workcell()
-    workcell.name = get_text_input_workcell_name()
-    workcell.comments = get_text_area_workcell_comments()
-    workcell.save()
-
-    set_selectbox_workcell(workcell)
-
-    set_is_editable(False)
-
-
-#
-# WORKCELL NAME
-#
-def get_text_input_workcell_name_key() -> str:
-    return f"{_KEY_PREFIX}_text_input_workcell_name"
-
-
-def get_text_input_workcell_name() -> str:
-    return streamlit.session_state[get_text_input_workcell_name_key()]
-
-
-def set_text_input_workcell_name(value: str):
-    streamlit.session_state[get_text_input_workcell_name_key()] = value
-
-
-#
-# WORKCELL COMMENTS
-#
-def get_text_area_workcell_comments_key() -> str:
-    return f"{_KEY_PREFIX}_text_area_workcell_comments"
-
-
-def get_text_area_workcell_comments() -> str:
-    return streamlit.session_state[get_text_area_workcell_comments_key()]
-
-
-def set_text_area_workcell_comments(value: str):
-    streamlit.session_state[get_text_area_workcell_comments_key()] = value
+        if streamlit.button("Save"):
+            labware.save()
+            set_dialog_is_shown(False)
+            streamlit.rerun()
 
 
 #
 # TAB
 #
-def render_workcell_metadata_tab(
+def render_tab(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):
-    session_state_manager.add_persistent_keys(get_is_editable_key())
+    session_state_manager.add_persistent_keys(get_dialog_is_shown_key())
 
-    with streamlit.container(horizontal=True):
-        if not get_is_editable():
-            streamlit.button(
-                "Enable Edits",
-                key=f"button_{_KEY_PREFIX}_enable_edits",
-                on_click=callback_button_enable_edits,
-                width=120,
-            )
+    with streamlit.container(gap=None, horizontal_alignment="center"):
+        if streamlit.button("New Labware"):
+            set_dialog_is_shown(True)
+            edit_labware(Labware(name="New Labware", workcell=workcell))
 
-        else:
-            streamlit.button(
-                "Discard Edits",
-                key=f"button_{_KEY_PREFIX}_discard_edits",
-                on_click=callback_button_discard_edits,
-                width=120,
-            )
-            streamlit.button(
-                "Save Edits",
-                key=f"button_{_KEY_PREFIX}_save_edits",
-                on_click=callback_button_save_edits,
-                width=120,
-            )
+    labwares = list(Labware.objects.filter(workcell=workcell).order_by(Lower("name")).all())
+    labware_chunks = [labwares[i : i + 3] for i in range(0, len(labwares), 3)]
 
-    session_state_manager.add_persistent_keys(get_text_input_workcell_name_key())
-    if not get_is_editable():
-        set_text_input_workcell_name(workcell.name)
+    with streamlit.container(horizontal_alignment="center"):
+        for labware_chunk in labware_chunks:
+            columns = streamlit.columns(3, width=1000)
+            for column_index, labware in enumerate(labware_chunk):
+                with columns[column_index], streamlit.container(border=True):
+                    with streamlit.container(gap=None, horizontal_alignment="center"):
+                        streamlit.space()
 
-    streamlit.text_input(
-        "Workcell Name",
-        value=workcell.name,
-        key=get_text_input_workcell_name_key(),
-        width=750,
-        disabled=not get_is_editable(),
-    )
+                        if streamlit.button(labware.name, type="tertiary", key=f"labware_{labware.id}_edit"):
+                            set_dialog_is_shown(True)
+                            edit_labware(labware)
 
-    session_state_manager.add_persistent_keys(get_text_area_workcell_comments_key())
-    if not get_is_editable():
-        set_text_area_workcell_comments(workcell.comments)
+                        streamlit.divider()
 
-    streamlit.text_area(
-        "Comments",
-        value=workcell.comments,
-        key=get_text_area_workcell_comments_key(),
-        height=500,
-        width=750,
-        disabled=not get_is_editable(),
-    )
+                    streamlit.space()

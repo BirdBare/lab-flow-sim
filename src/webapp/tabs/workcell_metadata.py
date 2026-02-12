@@ -7,7 +7,7 @@ _KEY_PREFIX = "workcell_metadata"
 
 
 #
-# WORKCELL_METADATA_TAB_IS_EDITABLE
+# WORKCELL_IS_EDITABLE
 #
 def get_is_editable_key() -> str:
     return f"{_KEY_PREFIX}_is_editable"

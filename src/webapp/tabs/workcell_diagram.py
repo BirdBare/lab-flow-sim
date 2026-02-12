@@ -258,6 +258,7 @@ def render_tab(
             get_node_on_click=get_is_editable(),
             get_edge_on_click=get_is_editable(),
             enable_pane_menu=get_is_editable(),
+            hide_watermark=True,
         ),
     )
 

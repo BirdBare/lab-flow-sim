@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "orm.flow_diagram",
     "orm.device",
-    "orm.labware",
     "orm.workcell",
     "orm.workcell_process",
 ]

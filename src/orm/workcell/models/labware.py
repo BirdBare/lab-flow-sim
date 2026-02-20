@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 
-from orm.workcell.models import Workcell
+from .workcell import Workcell
 
 
 class Labware(models.Model):

@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 
-from orm.labware.models import Labware
+from orm.workcell.models import Labware
 
 from .process import Process
 

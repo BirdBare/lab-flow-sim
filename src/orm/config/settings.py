@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "orm.device",
     "orm.labware",
     "orm.workcell",
+    "orm.workcell_process",
 ]
 
 MIDDLEWARE = [

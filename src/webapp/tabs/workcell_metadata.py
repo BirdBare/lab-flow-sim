@@ -32,15 +32,11 @@ def callback_button_discard_edits():
     set_is_editable(False)
 
 
-def callback_button_save_edits():
-    from pages.workcells import get_selectbox_workcell, set_selectbox_workcell
-
-    workcell = get_selectbox_workcell()
-    workcell.name = get_text_input_workcell_name()
-    workcell.comments = get_text_area_workcell_comments()
+def callback_button_save_edits(workcell: Workcell):
     workcell.save()
 
-    set_selectbox_workcell(workcell)
+    # This is a really crappy circular import bug I have to work around... #TODO
+    streamlit.session_state["selectbox_workcell"] = workcell
 
     set_is_editable(False)
 
@@ -52,10 +48,6 @@ def get_text_input_workcell_name_key() -> str:
     return f"{_KEY_PREFIX}_text_input_workcell_name"
 
 
-def get_text_input_workcell_name() -> str:
-    return streamlit.session_state[get_text_input_workcell_name_key()]
-
-
 def set_text_input_workcell_name(value: str):
     streamlit.session_state[get_text_input_workcell_name_key()] = value
 
@@ -65,10 +57,6 @@ def set_text_input_workcell_name(value: str):
 #
 def get_text_area_workcell_comments_key() -> str:
     return f"{_KEY_PREFIX}_text_area_workcell_comments"
-
-
-def get_text_area_workcell_comments() -> str:
-    return streamlit.session_state[get_text_area_workcell_comments_key()]
 
 
 def set_text_area_workcell_comments(value: str):
@@ -104,6 +92,7 @@ def render_tab(
                 "Save Edits",
                 key=f"button_{_KEY_PREFIX}_save_edits",
                 on_click=callback_button_save_edits,
+                args=(workcell,),
                 width=120,
             )
 
@@ -111,9 +100,8 @@ def render_tab(
     if not get_is_editable():
         set_text_input_workcell_name(workcell.name)
 
-    streamlit.text_input(
+    workcell.name = streamlit.text_input(
         "Workcell Name",
-        value=workcell.name,
         key=get_text_input_workcell_name_key(),
         width=750,
         disabled=not get_is_editable(),
@@ -123,9 +111,8 @@ def render_tab(
     if not get_is_editable():
         set_text_area_workcell_comments(workcell.comments)
 
-    streamlit.text_area(
+    workcell.comments = streamlit.text_area(
         "Comments",
-        value=workcell.comments,
         key=get_text_area_workcell_comments_key(),
         height=500,
         width=750,

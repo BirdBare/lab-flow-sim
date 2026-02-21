@@ -11,7 +11,7 @@ from orm.workcell.models import AssignedDevice, DeviceConnection, Workcell
 from webapp.state import workcell_labware_tab_state
 
 
-def reset_streamlit_flow_state(workcell: Workcell):
+def build_streamlit_flow_state(workcell: Workcell):
     state.StreamlitFlowSelectedID.set(None)
 
     nodes: list[StreamlitFlowNode] = []
@@ -118,7 +118,7 @@ def render_tab(
     )
 
     if not state.IsEditable.get():
-        reset_streamlit_flow_state(workcell)
+        build_streamlit_flow_state(workcell)
 
     with streamlit.container(horizontal=True):
         if not state.IsEditable.get():

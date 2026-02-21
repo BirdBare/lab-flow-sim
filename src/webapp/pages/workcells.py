@@ -1,3 +1,5 @@
+import datetime
+
 import streamlit
 from utils import SessionStateManager, webapp_menu
 
@@ -20,23 +22,20 @@ def set_selectbox_workcell(workcell: Workcell):
     streamlit.session_state[get_workcell_selectbox_key()] = workcell
 
 
-def selectbox_workcell_on_change():
-    workcell_metadata.set_is_editable(False)
-    workcell_layout.set_is_editable(False)
-    workcell_layout.reset_streamlit_flow_state(get_selectbox_workcell())
-
-
 #
 # CALLBACKS
 #
 def callback_button_new_workcell():
-    # TODO
-    pass
+    workcell = Workcell(
+        name=f"RENAME ME - New Process - {datetime.datetime.now().strftime('%d%m%Y:%H%M%S|%f')}",
+        comments="",
+    )
+    workcell.save()
+    set_selectbox_workcell(workcell)
 
 
 def callback_button_delete_workcell(workcell: Workcell):
-    # TODO
-    pass
+    workcell.delete()
 
 
 streamlit.set_page_config(page_title="Workcells", layout="wide")
@@ -59,19 +58,35 @@ with SessionStateManager() as session_state_manager:
             key=lambda x: x.name,
         ),
         key=get_workcell_selectbox_key(),
-        disabled=False,  # TODO
+        disabled=workcell_metadata.get_is_editable()
+        or workcell_layout.get_is_editable()
+        or workcell_processes.get_is_editable(),
         format_func=lambda x: x.name,
         width=800,
-        on_change=selectbox_workcell_on_change,
     )
 
     with streamlit.container(horizontal=True):
-        streamlit.button("New Workcell", width=150, on_click=callback_button_new_workcell)
+        streamlit.button(
+            "New Workcell",
+            width=150,
+            on_click=callback_button_new_workcell,
+            disabled=workcell_metadata.get_is_editable()
+            or workcell_layout.get_is_editable()
+            or workcell_processes.get_is_editable(),
+        )
 
         if workcell is None:
             streamlit.stop()
 
-        streamlit.button("Delete Workcell", width=150, on_click=callback_button_delete_workcell, args=(workcell,))
+        streamlit.button(
+            "Delete Workcell",
+            width=150,
+            on_click=callback_button_delete_workcell,
+            args=(workcell,),
+            disabled=workcell_metadata.get_is_editable()
+            or workcell_layout.get_is_editable()
+            or workcell_processes.get_is_editable(),
+        )
 
     streamlit.session_state["workcell_error_container"] = streamlit.container()
 

@@ -1,3 +1,5 @@
+import datetime
+
 import streamlit
 from django.db.models.functions import Lower
 from utils import SessionStateManager
@@ -76,7 +78,11 @@ def get_selectbox_process() -> Process:
 # BUTTON CALLBACKS
 #
 def callback_button_new_process(workcell=Workcell):
-    process = Process(workcell=workcell, name="New Process - RENAME ME", comments="")
+    process = Process(
+        workcell=workcell,
+        name=f"RENAME ME - New Process - {datetime.datetime.now().strftime('%d%m%Y:%H%M%S|%f')}",
+        comments="",
+    )
 
     get_processes().append(process)
     set_selectbox_process(process)
@@ -99,6 +105,8 @@ def callback_button_discard_edits():
 
 def callback_button_save_edits(process: Process):
     process.save()
+
+    set_selectbox_process(process)
 
     for swimlane in Swimlane.objects.filter(process=process).all():
         if swimlane not in workcell_process_swimlanes.get_swimlanes():

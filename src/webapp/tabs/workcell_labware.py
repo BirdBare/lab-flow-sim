@@ -2,8 +2,7 @@ import streamlit
 from django.db.models.functions import Lower
 from utils import SessionStateManager
 
-from orm.labware.models import Labware
-from orm.workcell.models import Workcell
+from orm.workcell.models import Labware, Workcell
 
 _KEY_PREFIX = "workcell_labware"
 

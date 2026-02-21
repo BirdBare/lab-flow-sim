@@ -2,6 +2,8 @@ import streamlit
 
 from orm.workcell.models import Workcell
 
+from . import workcells_page_state
+
 _KEY_PREFIX = "workcell_metadata"
 
 
@@ -35,7 +37,8 @@ def callback_button_save_edits(workcell: Workcell):
     workcell.save()
 
     # This is a really crappy circular import bug I have to work around... #TODO
-    streamlit.session_state["selectbox_workcell"] = workcell
+    workcells_page_state.set_selectbox_workcell(workcell)
+    # streamlit.session_state["selectbox_workcell"] = workcell
 
     set_is_editable(False)
 

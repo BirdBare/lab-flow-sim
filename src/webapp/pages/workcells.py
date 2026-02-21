@@ -3,23 +3,10 @@ import datetime
 import streamlit
 from utils import SessionStateManager, webapp_menu
 
+import webapp.state.workcells_page_state as state
 from orm.workcell.models import Workcell
+from webapp.state import workcell_layout_tab_state, workcell_metadata_tab_state, workcell_processes_tab_state
 from webapp.tabs import workcell_labware, workcell_layout, workcell_metadata, workcell_processes
-
-
-#
-# WORKCELL SELECTBOX
-#
-def get_workcell_selectbox_key() -> str:
-    return "selectbox_workcell"
-
-
-def get_selectbox_workcell() -> Workcell:
-    return streamlit.session_state[get_workcell_selectbox_key()]
-
-
-def set_selectbox_workcell(workcell: Workcell):
-    streamlit.session_state[get_workcell_selectbox_key()] = workcell
 
 
 #
@@ -31,7 +18,7 @@ def callback_button_new_workcell():
         comments="",
     )
     workcell.save()
-    set_selectbox_workcell(workcell)
+    state.set_selectbox_workcell(workcell)
 
 
 def callback_button_delete_workcell(workcell: Workcell):
@@ -57,10 +44,10 @@ with SessionStateManager() as session_state_manager:
             Workcell.objects.all(),
             key=lambda x: x.name,
         ),
-        key=get_workcell_selectbox_key(),
-        disabled=workcell_metadata.get_is_editable()
-        or workcell_layout.get_is_editable()
-        or workcell_processes.get_is_editable(),
+        key=state.get_workcell_selectbox_key(),
+        disabled=workcell_metadata_tab_state.get_is_editable()
+        or workcell_layout_tab_state.get_is_editable()
+        or workcell_processes_tab_state.get_is_editable(),
         format_func=lambda x: x.name,
         width=800,
     )
@@ -70,9 +57,9 @@ with SessionStateManager() as session_state_manager:
             "New Workcell",
             width=150,
             on_click=callback_button_new_workcell,
-            disabled=workcell_metadata.get_is_editable()
-            or workcell_layout.get_is_editable()
-            or workcell_processes.get_is_editable(),
+            disabled=workcell_metadata_tab_state.get_is_editable()
+            or workcell_layout_tab_state.get_is_editable()
+            or workcell_processes_tab_state.get_is_editable(),
         )
 
         if workcell is None:
@@ -83,9 +70,9 @@ with SessionStateManager() as session_state_manager:
             width=150,
             on_click=callback_button_delete_workcell,
             args=(workcell,),
-            disabled=workcell_metadata.get_is_editable()
-            or workcell_layout.get_is_editable()
-            or workcell_processes.get_is_editable(),
+            disabled=workcell_metadata_tab_state.get_is_editable()
+            or workcell_layout_tab_state.get_is_editable()
+            or workcell_processes_tab_state.get_is_editable(),
         )
 
     streamlit.session_state["workcell_error_container"] = streamlit.container()

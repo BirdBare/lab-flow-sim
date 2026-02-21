@@ -3,20 +3,7 @@ from django.db.models.functions import Lower
 from utils import SessionStateManager
 
 from orm.workcell.models import Labware, Workcell
-
-_KEY_PREFIX = "workcell_labware"
-
-
-def get_dialog_is_shown_key() -> str:
-    return f"{_KEY_PREFIX}_dialog_is_show"
-
-
-def get_dialog_is_shown() -> bool:
-    return streamlit.session_state.get(get_dialog_is_shown_key(), False)
-
-
-def set_dialog_is_shown(value: bool):
-    streamlit.session_state[get_dialog_is_shown_key()] = value
+from webapp.state import workcell_labware_tab_state as state
 
 
 @streamlit.dialog("Labware Editor", dismissible=False)
@@ -28,18 +15,18 @@ def edit_labware(labware: Labware):
 
     with streamlit.container(horizontal=True):
         if streamlit.button("Cancel"):
-            set_dialog_is_shown(False)
+            state.set_dialog_is_shown(False)
             streamlit.rerun()
 
         if not labware._state.adding:
             if streamlit.button("Delete"):
                 labware.delete()
-                set_dialog_is_shown(False)
+                state.set_dialog_is_shown(False)
                 streamlit.rerun()
 
         if streamlit.button("Save"):
             labware.save()
-            set_dialog_is_shown(False)
+            state.set_dialog_is_shown(False)
             streamlit.rerun()
 
 
@@ -50,11 +37,11 @@ def render_tab(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):
-    session_state_manager.add_persistent_keys(get_dialog_is_shown_key())
+    session_state_manager.add_persistent_keys(state.get_dialog_is_shown_key())
 
     with streamlit.container(gap=None, horizontal_alignment="center"):
         if streamlit.button("New Labware"):
-            set_dialog_is_shown(True)
+            state.set_dialog_is_shown(True)
             edit_labware(Labware(name="New Labware", workcell=workcell))
 
     labwares = list(Labware.objects.filter(workcell=workcell).order_by(Lower("name")).all())
@@ -69,7 +56,7 @@ def render_tab(
                         streamlit.space()
 
                         if streamlit.button(labware.name, type="tertiary", key=f"labware_{labware.id}_edit"):
-                            set_dialog_is_shown(True)
+                            state.set_dialog_is_shown(True)
                             edit_labware(labware)
 
                         streamlit.divider()

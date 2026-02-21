@@ -148,10 +148,7 @@ def callback_button_enable_edits():
     set_is_editable(True)
 
 
-def callback_button_discard_edits():
-    from pages.workcells import get_selectbox_workcell
-
-    reset_streamlit_flow_state(get_selectbox_workcell())
+def callback_button_discard_edits(workcell: Workcell):
     set_is_editable(False)
 
 
@@ -196,6 +193,9 @@ def render_tab(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):
+    if not get_is_editable():
+        reset_streamlit_flow_state(workcell)
+
     session_state_manager.add_persistent_keys(
         get_is_editable_key(),
         get_streamlit_flow_state_key(),
@@ -219,6 +219,7 @@ def render_tab(
                 "Discard Edits",
                 key=f"button_{_KEY_PREFIX}_discard_edits",
                 on_click=callback_button_discard_edits,
+                args=(workcell,),
                 width=120,
             )
             streamlit.button(

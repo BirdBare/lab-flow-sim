@@ -26,6 +26,19 @@ def selectbox_workcell_on_change():
     workcell_layout.reset_streamlit_flow_state(get_selectbox_workcell())
 
 
+#
+# CALLBACKS
+#
+def callback_button_new_workcell():
+    # TODO
+    pass
+
+
+def callback_button_delete_workcell(workcell: Workcell):
+    # TODO
+    pass
+
+
 streamlit.set_page_config(page_title="Workcells", layout="wide")
 
 webapp_menu()
@@ -52,10 +65,13 @@ with SessionStateManager() as session_state_manager:
         on_change=selectbox_workcell_on_change,
     )
 
-    streamlit.button("New Workcell", width=150, on_click=lambda: None)
+    with streamlit.container(horizontal=True):
+        streamlit.button("New Workcell", width=150, on_click=callback_button_new_workcell)
 
-    if workcell is None:
-        streamlit.stop()
+        if workcell is None:
+            streamlit.stop()
+
+        streamlit.button("Delete Workcell", width=150, on_click=callback_button_delete_workcell, args=(workcell,))
 
     streamlit.session_state["workcell_error_container"] = streamlit.container()
 

@@ -3,88 +3,113 @@ from django.db.models.functions import Lower
 from utils import SessionStateManager, webapp_menu
 
 from orm.device.models import Device, Function
+from webapp.state import devices_page_state as state
 
 streamlit.set_page_config(page_title="Devices", layout="wide")
 
 webapp_menu()
 
 
+#
+# CALLBACKS
+#
+def callback_button_edit_device_delete_function(index: int):
+    state.DeviceFunctionList.get().pop(index)
+
+
 @streamlit.dialog("Device Editor", dismissible=False)
 def edit_device(device: Device):
-    functions: list[Function] = streamlit.session_state["edit_device_functions"]
 
     with streamlit.container(gap=None):
-        device.name = streamlit.text_input("Device Name", value=device.name, key=f"device_{device.id}_name")
+        device.name = streamlit.text_input(
+            "Device Name",
+            value=device.name,
+            key=f"{state.KEY_PREFIX}_device_editor_text_input_device_name",
+        )
 
         streamlit.divider()
 
         with streamlit.container(horizontal_alignment="center"):
             if streamlit.button("Add Function"):
-                functions.insert(
+                state.DeviceFunctionList.get().insert(
                     0,
                     Function(device=device, name="New Function", category="Material", execution_time_formula="0"),
                 )
 
-    for index, function in enumerate(functions):
+    for index, function in enumerate(state.DeviceFunctionList.get()):
         with streamlit.expander(function.name):
+            #
+            # Function name
+            #
             function.name = streamlit.text_input(
                 "Function Name",
                 value=function.name,
-                key=f"function_{function.id}_name",
+                key=f"{state.KEY_PREFIX}_device_editor_text_input_function_{function.id}_name",
             )
 
+            #
+            # Function Category
+            #
             function.category = streamlit.selectbox(
                 "Functional Category",
                 ["Material", "Spatial"],
-                key=f"function_{function.id}_categorization",
+                key=f"{state.KEY_PREFIX}_device_editor_text_input_function_{function.id}_categorization",
                 label_visibility="visible",
             )
 
+            #
+            # Execution time formula
+            #
             function.execution_time_formula = streamlit.text_input(
                 "Execution Time Formula (s)",
                 value=function.execution_time_formula,
-                key=f"function_{function.id}_execution_time_formula",
+                key=f"{state.KEY_PREFIX}_device_editor_text_input_function_{function.id}_execution_time_formula",
             )
 
+            #
+            # Comments
+            #
             function.comments = streamlit.text_area(
                 "Comments",
                 value=function.comments,
-                key=f"function_{function.id}_comments",
+                key=f"{state.KEY_PREFIX}_device_editor_text_input_function_{function.id}_comments",
             )
 
             with streamlit.container(horizontal_alignment="right"):
                 streamlit.button(
                     "",
-                    key=f"function_{function.id}_delete",
+                    key=f"f{state.KEY_PREFIX}_device_editor_button_function_{function.id}_delete",
                     icon=":material/delete:",
                     type="tertiary",
-                    on_click=lambda index: streamlit.session_state["edit_device_functions"].pop(index),
+                    on_click=callback_button_edit_device_delete_function,
                     args=(index,),
                 )
 
     with streamlit.container(horizontal=True):
-        if streamlit.button("Cancel"):
+        if streamlit.button("Cancel", key=f"{state.KEY_PREFIX}_device_editor_button_cancel"):
             streamlit.rerun()
 
         if not device._state.adding:
-            if streamlit.button("Delete"):
+            if streamlit.button("Delete", key=f"{state.KEY_PREFIX}_device_editor_button_delete"):
                 device.delete()
                 streamlit.rerun()
 
-        if streamlit.button("Save"):
+        if streamlit.button("Save", key=f"{state.KEY_PREFIX}_device_editor_button_save"):
             device.save()
 
             for function in Function.objects.filter(device=device).all():
-                if function not in functions:
+                if function not in state.DeviceFunctionList.get():
                     function.delete()
 
-            for function in functions:
+            for function in state.DeviceFunctionList.get():
                 function.save()
 
             streamlit.rerun()
 
 
-with SessionStateManager("edit_device_functions") as session_state_manager:
+with SessionStateManager() as session_state_manager:
+    session_state_manager.add_persistent_keys(state.DeviceFunctionList.key())
+
     streamlit.title("Devices")
 
     streamlit.text(
@@ -92,12 +117,12 @@ with SessionStateManager("edit_device_functions") as session_state_manager:
     )
 
     with streamlit.container(width=400):
-        device_search_value = streamlit.text_input("Device Search")
+        device_search_value = streamlit.text_input("Device Search", key=f"{state.KEY_PREFIX}_text_input_device_search")
 
     with streamlit.container(gap=None, horizontal_alignment="center"):
         streamlit.divider()
-        if streamlit.button("New Device"):
-            streamlit.session_state["edit_device_functions"] = []
+        if streamlit.button("New Device", key=f"{state.KEY_PREFIX}_button_new_device"):
+            state.DeviceFunctionList.set([])
             edit_device(Device(name="New Device"))
 
     devices = list(Device.objects.filter(name__icontains=device_search_value).order_by(Lower("name")).all())
@@ -111,9 +136,18 @@ with SessionStateManager("edit_device_functions") as session_state_manager:
                     with streamlit.container(gap=None, horizontal_alignment="center"):
                         streamlit.space()
 
-                        if streamlit.button(device.name, type="tertiary", key=f"device_{device.id}_edit"):
-                            streamlit.session_state["edit_device_functions"] = list(
-                                Function.objects.filter(device=device).order_by(Lower("name")).all(),
+                        #
+                        # device name and edit button
+                        #
+                        if streamlit.button(
+                            device.name,
+                            type="tertiary",
+                            key=f"{state.KEY_PREFIX}_button_device_{device.id}_edit",
+                        ):
+                            state.DeviceFunctionList.set(
+                                list(
+                                    Function.objects.filter(device=device).order_by(Lower("name")).all(),
+                                ),
                             )
                             edit_device(device)
 
@@ -121,27 +155,37 @@ with SessionStateManager("edit_device_functions") as session_state_manager:
 
                     for function in Function.objects.filter(device=device).order_by(Lower("name")).all():
                         with streamlit.expander(function.name):
+                            #
+                            # Category
+                            #
                             streamlit.selectbox(
                                 "Functional Category",
                                 [function.category],
-                                key=f"device_function_{function.id}_categorization",
+                                key=f"{state.KEY_PREFIX}_text_input device_function_{function.id}_categorization",
                                 disabled=True,
                             )
 
-                            streamlit.session_state[f"device_function_{function.id}_execution_time_formula"] = (
-                                function.execution_time_formula
+                            #
+                            # Execution Time
+                            #
+                            state.TextInputDeviceFunctionExecutionTimeFormula.set(
+                                function.execution_time_formula,
+                                function,
                             )
                             streamlit.text_input(
                                 "Execution Time Formula (s)",
-                                key=f"device_function_{function.id}_execution_time_formula",
+                                key=state.TextInputDeviceFunctionExecutionTimeFormula.key(function),
                                 disabled=True,
                             )
 
+                            #
+                            # Comments
+                            #
                             if function.comments.replace(" ", "").replace("\n", "") != "":
-                                streamlit.session_state[f"device_function_{function.id}_comment"] = function.comments
+                                state.TextInputDeviceComments.set(function.comments, function)
                                 streamlit.text_area(
                                     "Comments",
-                                    key=f"device_function_{function.id}_comment",
+                                    key=state.TextInputDeviceComments.key(function),
                                     disabled=True,
                                 )
 

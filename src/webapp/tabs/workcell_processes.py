@@ -3,7 +3,7 @@ from django.db.models.functions import Lower
 from utils import SessionStateManager
 
 from orm.workcell.models import Workcell
-from orm.workcell_process.models import Process
+from orm.workcell_process.models import BaseStep, Process, StepIndex, Swimlane, SwimlaneIndex
 from webapp.tabs import workcell_process_metadata, workcell_process_swimlanes
 
 _KEY_PREFIX = "workcell_processes"
@@ -76,17 +76,17 @@ def get_selectbox_process() -> Process:
 # BUTTON CALLBACKS
 #
 def callback_button_new_process(workcell=Workcell):
-    set_is_editable(True)
-    set_force_update(True)
-
     process = Process(workcell=workcell, name="New Process - RENAME ME", comments="")
 
     get_processes().append(process)
     set_selectbox_process(process)
 
-
-def callback_button_delete_process():
     set_is_editable(True)
+    set_force_update(True)
+
+
+def callback_button_delete_process(process: Process):
+    process.delete()
 
 
 def callback_button_enable_edits():
@@ -97,7 +97,29 @@ def callback_button_discard_edits():
     set_is_editable(False)
 
 
-def callback_button_save_edits():
+def callback_button_save_edits(process: Process):
+    process.save()
+
+    for swimlane in Swimlane.objects.filter(process=process).all():
+        if swimlane not in workcell_process_swimlanes.get_swimlanes():
+            swimlane.delete()
+
+    for swimlane_index, swimlane in enumerate(workcell_process_swimlanes.get_swimlanes()):
+        swimlane.save()
+
+        SwimlaneIndex.objects.filter(swimlane=swimlane).delete()
+
+        SwimlaneIndex(swimlane=swimlane, index=swimlane_index).save()
+
+    for swimlane, steps in workcell_process_swimlanes.get_swimlane_steps_dict().items():
+        # I can delete all the previous steps in the swimlane and rebuild. Is faster and easier to read.
+        BaseStep.objects.filter(swimlane=swimlane).delete()
+
+        for step_index, step in enumerate(steps):
+            step.save()
+
+            StepIndex(base_step=step, index=step_index).save()
+
     set_is_editable(False)
 
 
@@ -151,6 +173,7 @@ def render_tab(
                 width=130,
                 key=f"button_{_KEY_PREFIX}_delete_process",
                 on_click=callback_button_save_edits,
+                args=(process,),
             )
         else:
             streamlit.button(
@@ -164,6 +187,7 @@ def render_tab(
                 width=130,
                 key=f"button_{_KEY_PREFIX}_delete_process",
                 on_click=callback_button_delete_process,
+                args=(process,),
             )
 
     if get_is_editable():

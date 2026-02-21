@@ -15,18 +15,18 @@ def edit_labware(labware: Labware):
 
     with streamlit.container(horizontal=True):
         if streamlit.button("Cancel"):
-            state.set_dialog_is_shown(False)
+            state.DialogIsShown.set(False)
             streamlit.rerun()
 
         if not labware._state.adding:
             if streamlit.button("Delete"):
                 labware.delete()
-                state.set_dialog_is_shown(False)
+                state.DialogIsShown.set(False)
                 streamlit.rerun()
 
         if streamlit.button("Save"):
             labware.save()
-            state.set_dialog_is_shown(False)
+            state.DialogIsShown.set(False)
             streamlit.rerun()
 
 
@@ -37,11 +37,11 @@ def render_tab(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):
-    session_state_manager.add_persistent_keys(state.get_dialog_is_shown_key())
+    session_state_manager.add_persistent_keys(state.DialogIsShown.key())
 
     with streamlit.container(gap=None, horizontal_alignment="center"):
         if streamlit.button("New Labware"):
-            state.set_dialog_is_shown(True)
+            state.DialogIsShown.set(True)
             edit_labware(Labware(name="New Labware", workcell=workcell))
 
     labwares = list(Labware.objects.filter(workcell=workcell).order_by(Lower("name")).all())
@@ -56,7 +56,7 @@ def render_tab(
                         streamlit.space()
 
                         if streamlit.button(labware.name, type="tertiary", key=f"labware_{labware.id}_edit"):
-                            state.set_dialog_is_shown(True)
+                            state.DialogIsShown.set(True)
                             edit_labware(labware)
 
                         streamlit.divider()

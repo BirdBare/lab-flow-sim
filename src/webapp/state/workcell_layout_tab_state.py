@@ -1,136 +1,102 @@
 import streamlit
-from streamlit_flow import StreamlitFlowEdge, StreamlitFlowNode, StreamlitFlowState
+from streamlit_flow import StreamlitFlowNode as _StreamlitFlowNode
+from streamlit_flow import StreamlitFlowState as _StreamlitFlowState
 
-from orm.device.models import Device
-from orm.flow_diagram.models import AssignedDeviceNode
-from orm.workcell.models import AssignedDevice, DeviceConnection, Workcell
+from orm.device.models import Device as _Device
+from orm.workcell.models import AssignedDevice as _AssignedDevice
+from webapp.utils import SessionStateManager
 
-_KEY_PREFIX = "workcell_diagram"
-
-
-#
-# WORKCELL_IS_EDITABLE
-#
-def get_is_editable_key() -> str:
-    return f"{_KEY_PREFIX}_is_editable"
+KEY_PREFIX = "WORKCELLS_LAYOUT_TAB_STATE"
 
 
-def set_is_editable(value: bool):
-    streamlit.session_state[get_is_editable_key()] = value
+class IsEditable(SessionStateManager.SessionStateItem[bool]):
+    @classmethod
+    def get(cls) -> bool:
+        return streamlit.session_state.get(cls.key(), False)
+
+    @classmethod
+    def set(cls, value: bool) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_is_editable")
 
 
-def get_is_editable() -> bool:
-    return streamlit.session_state.get(get_is_editable_key(), False)
+class StreamlitFlowSelectedID(SessionStateManager.SessionStateItem[str | None]):
+    @classmethod
+    def get(cls) -> str | None:
+        return streamlit.session_state.get(cls.key(), None)
+
+    @classmethod
+    def set(cls, value: str | None) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_selected_id")
 
 
-#
-# WORKCELL_STREAMLIT_FLOW_SELECTED_ID
-#
-def get_streamlit_flow_selected_id_key() -> str:
-    return f"{_KEY_PREFIX}_streamlit_flow_selected_id"
+class StreamlitFlowNodeDict(SessionStateManager.SessionStateItem[dict[str, _StreamlitFlowNode]]):
+    @classmethod
+    def get(cls) -> dict[str, _StreamlitFlowNode]:
+        if cls.key() not in streamlit.session_state:
+            cls.set({})
+
+        return streamlit.session_state[cls.key()]
+
+    @classmethod
+    def set(cls, value: dict[str, _StreamlitFlowNode]) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_node_dict")
 
 
-def set_streamlit_flow_selected_id(value: None | str):
-    streamlit.session_state[get_streamlit_flow_selected_id_key()] = value
+class AssignedDeviceDict(SessionStateManager.SessionStateItem[dict[str, _AssignedDevice]]):
+    @classmethod
+    def get(cls) -> dict[str, _AssignedDevice]:
+        if cls.key() not in streamlit.session_state:
+            cls.set({})
+
+        return streamlit.session_state[cls.key()]
+
+    @classmethod
+    def set(cls, value: dict[str, _AssignedDevice]) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_assigned_device_dict")
 
 
-def get_streamlit_flow_selected_id() -> None | str:
-    return streamlit.session_state.get(get_streamlit_flow_selected_id_key(), None)
+class StreamlitFlowState(SessionStateManager.SessionStateItem[_StreamlitFlowState]):
+    @classmethod
+    def get(cls) -> _StreamlitFlowState:
+        if cls.key() not in streamlit.session_state:
+            cls.set(_StreamlitFlowState([], []))
+
+        return streamlit.session_state[cls.key()]
+
+    @classmethod
+    def set(cls, value: _StreamlitFlowState) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_state")
 
 
-#
-# WORKCELL_STREAMLIT_FLOW_NODE_KEY
-#
-def get_flow_node_dict_key() -> str:
-    return f"{_KEY_PREFIX}_streamlit_flow_node_dict"
+class SelectboxDevice(SessionStateManager.SessionStateItem[_Device | None]):
+    @classmethod
+    def get(cls) -> _Device | None:
+        return streamlit.session_state[cls.key()]
 
+    @classmethod
+    def set(cls, value: _Device | None) -> None:
+        streamlit.session_state[cls.key()] = value
 
-def get_flow_node_dict() -> dict[str, StreamlitFlowNode]:
-    if get_flow_node_dict_key() not in streamlit.session_state:
-        streamlit.session_state[get_flow_node_dict_key()] = {}
-
-    return streamlit.session_state[get_flow_node_dict_key()]
-
-
-#
-# WORKCELL_STREAMLIT_ASSIGNED_DEVICE_KEY
-#
-def get_assigned_device_dict_key() -> str:
-    return f"{_KEY_PREFIX}_assigned_device_dict"
-
-
-def get_assigned_device_dict() -> dict[str, AssignedDevice]:
-    if get_assigned_device_dict_key() not in streamlit.session_state:
-        streamlit.session_state[get_assigned_device_dict_key()] = {}
-
-    return streamlit.session_state[get_assigned_device_dict_key()]
-
-
-#
-# WORKCELL_STREAMLIT_FLOW_STATE
-#
-def get_streamlit_flow_state_key() -> str:
-    return f"{_KEY_PREFIX}_streamlit_flow_state"
-
-
-def set_streamlit_flow_state(workcell_streamlit_flow_state: StreamlitFlowState):
-    streamlit.session_state[get_streamlit_flow_state_key()] = workcell_streamlit_flow_state
-
-
-def get_streamlit_flow_state() -> StreamlitFlowState:
-    if get_streamlit_flow_state_key() not in streamlit.session_state:
-        set_streamlit_flow_state(StreamlitFlowState([], []))
-
-    return streamlit.session_state[get_streamlit_flow_state_key()]
-
-
-def reset_streamlit_flow_state(workcell: Workcell):
-    set_streamlit_flow_selected_id(None)
-
-    nodes: list[StreamlitFlowNode] = []
-    edges: list[StreamlitFlowEdge] = []
-
-    assigned_devices = AssignedDevice.objects.filter(
-        workcell=workcell,
-    ).all()
-
-    for assigned_device in assigned_devices:
-        db_node = AssignedDeviceNode.objects.filter(assigned_device=assigned_device).get().node
-
-        node = StreamlitFlowNode(
-            str(db_node.id),
-            (db_node.x_pos, db_node.y_pos),
-            {"content": ""},
-        )
-
-        get_assigned_device_dict()[node.id] = assigned_device
-        get_flow_node_dict()[node.id] = node
-
-        nodes.append(node)
-
-    for device_connection in DeviceConnection.objects.filter(assigned_devices__in=assigned_devices).distinct().all():
-        connected_devices = list(device_connection.assigned_devices.all())
-
-        device_1 = connected_devices[0]
-        db_node_1 = AssignedDeviceNode.objects.filter(assigned_device=device_1).get().node
-
-        device_2 = connected_devices[1]
-        db_node_2 = AssignedDeviceNode.objects.filter(assigned_device=device_2).get().node
-
-        edge = StreamlitFlowEdge(f"{db_node_1.id}-{db_node_2.id}", str(db_node_1.id), str(db_node_2.id))
-
-        edges.append(edge)
-
-    get_streamlit_flow_state().nodes = nodes
-    get_streamlit_flow_state().edges = edges
-
-
-#
-# SELECT BOX NODE ASSIGNED DEVICE
-#
-def get_selectbox_device_key() -> str:
-    return "selectbox_device"
-
-
-def get_selectbox_device() -> Device:
-    return streamlit.session_state[get_selectbox_device_key()]
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_selectbox_device")

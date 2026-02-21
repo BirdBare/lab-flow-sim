@@ -1,23 +1,29 @@
+from __future__ import annotations
+
 import typing
 
 import streamlit
 
+T = typing.TypeVar("T")
+
 
 class SessionStateManager:
+    key = typing.NewType("key", str)
+
     class SessionStateItem[T]:
-        @staticmethod
-        def get(*args: typing.Any, **kwargs: typing.Any) -> T:
+        @classmethod
+        def get(cls, *args: typing.Any, **kwargs: typing.Any) -> T:
             raise NotImplementedError
 
-        @staticmethod
-        def set(value: T, *args: typing.Any, **kwargs: typing.Any) -> None:
+        @classmethod
+        def set(cls, value: T, *args: typing.Any, **kwargs: typing.Any) -> None:
             raise NotImplementedError
 
-        @staticmethod
-        def key(*args: typing.Any, **kwargs: typing.Any) -> str:
+        @classmethod
+        def key(cls, *args: typing.Any, **kwargs: typing.Any) -> SessionStateManager.key:
             raise NotImplementedError
 
-    def __init__(self, *persistent_keys: str):
+    def __init__(self, *persistent_keys: key):
         self._skip_delete = False
         self._persistent_keys: set[str] = set()
         self._persistent_keys.add("orm_setup")
@@ -25,7 +31,7 @@ class SessionStateManager:
 
         self.add_persistent_keys(*persistent_keys)
 
-    def add_persistent_keys(self, *persistent_keys: str):
+    def add_persistent_keys(self, *persistent_keys: SessionStateManager.key):
         self._persistent_keys |= set(persistent_keys)
 
     def skip_deletion_round(self):

@@ -6,7 +6,7 @@ from utils import SessionStateManager, webapp_menu
 import webapp.state.workcells_page_state as state
 from orm.workcell.models import Workcell
 from webapp.state import workcell_layout_tab_state, workcell_metadata_tab_state, workcell_processes_tab_state
-from webapp.tabs import workcell_labware, workcell_layout, workcell_metadata, workcell_processes
+from webapp.tabs import workcell_labware_tab, workcell_layout_tab, workcell_metadata_tab, workcell_processes_tab
 
 
 #
@@ -18,7 +18,7 @@ def callback_button_new_workcell():
         comments="",
     )
     workcell.save()
-    state.set_selectbox_workcell(workcell)
+    state.SelectboxWorkcell.set(workcell)
 
 
 def callback_button_delete_workcell(workcell: Workcell):
@@ -37,17 +37,17 @@ with SessionStateManager() as session_state_manager:
     )
 
     # Render selectbox
-    session_state_manager.add_persistent_keys("selectbox_workcell")
+    session_state_manager.add_persistent_keys(state.SelectboxWorkcell.key())
     workcell = streamlit.selectbox(
         "Select A Workcell",
         sorted(
             Workcell.objects.all(),
             key=lambda x: x.name,
         ),
-        key=state.get_workcell_selectbox_key(),
-        disabled=workcell_metadata_tab_state.get_is_editable()
-        or workcell_layout_tab_state.get_is_editable()
-        or workcell_processes_tab_state.get_is_editable(),
+        key=state.SelectboxWorkcell.key(),
+        disabled=workcell_metadata_tab_state.IsEditable.get()
+        or workcell_layout_tab_state.IsEditable.get()
+        or workcell_processes_tab_state.IsEditable.get(),
         format_func=lambda x: x.name,
         width=800,
     )
@@ -57,9 +57,9 @@ with SessionStateManager() as session_state_manager:
             "New Workcell",
             width=150,
             on_click=callback_button_new_workcell,
-            disabled=workcell_metadata_tab_state.get_is_editable()
-            or workcell_layout_tab_state.get_is_editable()
-            or workcell_processes_tab_state.get_is_editable(),
+            disabled=workcell_metadata_tab_state.IsEditable.get()
+            or workcell_layout_tab_state.IsEditable.get()
+            or workcell_processes_tab_state.IsEditable.get(),
         )
 
         if workcell is None:
@@ -70,25 +70,25 @@ with SessionStateManager() as session_state_manager:
             width=150,
             on_click=callback_button_delete_workcell,
             args=(workcell,),
-            disabled=workcell_metadata_tab_state.get_is_editable()
-            or workcell_layout_tab_state.get_is_editable()
-            or workcell_processes_tab_state.get_is_editable(),
+            disabled=workcell_metadata_tab_state.IsEditable.get()
+            or workcell_layout_tab_state.IsEditable.get()
+            or workcell_processes_tab_state.IsEditable.get(),
         )
 
     streamlit.session_state["workcell_error_container"] = streamlit.container()
 
-    workcell_metadata_tab, workcell_diagram_tab, workcell_labware_tab, workcell_processes_tab = streamlit.tabs(
+    workcell_metadata, workcell_diagram, workcell_labware, workcell_processes = streamlit.tabs(
         ["Workcell Metadata", "Workcell Layout", "Workcell Labware", "Workcell Processes"],
     )
 
-    with workcell_labware_tab:
-        workcell_labware.render_tab(session_state_manager, workcell)
+    with workcell_labware:
+        workcell_labware_tab.render_tab(session_state_manager, workcell)
 
-    with workcell_metadata_tab:
-        workcell_metadata.render_tab(session_state_manager, workcell)
+    with workcell_metadata:
+        workcell_metadata_tab.render_tab(session_state_manager, workcell)
 
-    with workcell_diagram_tab:
-        workcell_layout.render_tab(session_state_manager, workcell)
+    with workcell_diagram:
+        workcell_layout_tab.render_tab(session_state_manager, workcell)
 
-    with workcell_processes_tab:
-        workcell_processes.render_tab(session_state_manager, workcell)
+    with workcell_processes:
+        workcell_processes_tab.render_tab(session_state_manager, workcell)

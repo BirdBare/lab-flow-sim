@@ -8,7 +8,7 @@ import webapp.state.workcell_processes_tab_state as state
 from orm.workcell.models import Workcell
 from orm.workcell_process.models import BaseStep, Process, StepIndex, Swimlane, SwimlaneIndex
 from webapp.state import workcell_process_swimlanes_tab_state
-from webapp.tabs import workcell_process_metadata, workcell_process_swimlanes
+from webapp.tabs import workcell_process_metadata_tab, workcell_process_swimlanes_tab
 
 
 #
@@ -21,11 +21,11 @@ def callback_button_new_process(workcell=Workcell):
         comments="",
     )
 
-    state.get_processes().append(process)
-    state.set_selectbox_process(process)
+    state.ProcessList.get().append(process)
+    state.SelectboxProcess.set(process)
 
-    state.set_is_editable(True)
-    state.set_force_update(True)
+    state.IsEditable.set(True)
+    state.ForceUpdate.set(True)
 
 
 def callback_button_delete_process(process: Process):
@@ -33,30 +33,30 @@ def callback_button_delete_process(process: Process):
 
 
 def callback_button_enable_edits():
-    state.set_is_editable(True)
+    state.IsEditable.set(True)
 
 
 def callback_button_discard_edits():
-    state.set_is_editable(False)
+    state.IsEditable.set(False)
 
 
 def callback_button_save_edits(process: Process):
     process.save()
 
-    state.set_selectbox_process(process)
+    state.SelectboxProcess.set(process)
 
     for swimlane in Swimlane.objects.filter(process=process).all():
-        if swimlane not in workcell_process_swimlanes_tab_state.get_swimlanes():
+        if swimlane not in workcell_process_swimlanes_tab_state.SwimlaneList.get():
             swimlane.delete()
 
-    for swimlane_index, swimlane in enumerate(workcell_process_swimlanes_tab_state.get_swimlanes()):
+    for swimlane_index, swimlane in enumerate(workcell_process_swimlanes_tab_state.SwimlaneList.get()):
         swimlane.save()
 
         SwimlaneIndex.objects.filter(swimlane=swimlane).delete()
 
         SwimlaneIndex(swimlane=swimlane, index=swimlane_index).save()
 
-    for swimlane, steps in workcell_process_swimlanes_tab_state.get_swimlane_steps_dict().items():
+    for swimlane, steps in workcell_process_swimlanes_tab_state.SwimlaneStepsDict.get().items():
         # I can delete all the previous steps in the swimlane and rebuild. Is faster and easier to read.
         BaseStep.objects.filter(swimlane=swimlane).delete()
 
@@ -65,7 +65,7 @@ def callback_button_save_edits(process: Process):
 
             StepIndex(base_step=step, index=step_index).save()
 
-    state.set_is_editable(False)
+    state.IsEditable.set(False)
 
 
 #
@@ -75,30 +75,32 @@ def render_tab(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):
-    session_state_manager.add_persistent_keys(state.get_is_editable_key())
+    session_state_manager.add_persistent_keys(state.IsEditable.key(), state.ForceUpdate.key())
 
-    session_state_manager.add_persistent_keys(state.get_processes_key())
-    if not state.get_is_editable():
-        state.reset_processes()
+    session_state_manager.add_persistent_keys(state.ProcessList.key())
+    if not state.IsEditable.get():
+        # Reset the state
+        state.ProcessList.set([])
+
         for process in Process.objects.filter(workcell=workcell).order_by(Lower("name")).all():
-            state.get_processes().append(process)
+            state.ProcessList.get().append(process)
 
     with streamlit.container(horizontal=True, vertical_alignment="bottom"):
-        session_state_manager.add_persistent_keys("selectbox_process")
+        session_state_manager.add_persistent_keys(state.SelectboxProcess.key())
         process = streamlit.selectbox(
             "Select A Process",
-            state.get_processes(),
-            key=state.get_selectbox_process_key(),
-            disabled=state.get_is_editable(),
+            state.ProcessList.get(),
+            key=state.SelectboxProcess.key(),
+            disabled=state.IsEditable.get(),
             format_func=lambda x: x.name,
             width=600,
         )
 
-        if not state.get_is_editable():
+        if not state.IsEditable.get():
             streamlit.button(
                 "New Process",
                 width=130,
-                key=f"button_{state._KEY_PREFIX}_new_process",
+                key=f"{state.KEY_PREFIX}_button_new_process",
                 on_click=callback_button_new_process,
                 args=(workcell,),
             )
@@ -106,17 +108,17 @@ def render_tab(
         if process is None:
             streamlit.stop()
 
-        if state.get_is_editable():
+        if state.IsEditable.get():
             streamlit.button(
                 "Discard Edits",
                 width=130,
-                key=f"button_{state._KEY_PREFIX}_enable_edits",
+                key=f"{state.KEY_PREFIX}_button_enable_edits",
                 on_click=callback_button_discard_edits,
             )
             streamlit.button(
                 "Save Edits",
                 width=130,
-                key=f"button_{state._KEY_PREFIX}_delete_process",
+                key=f"{state.KEY_PREFIX}_button_delete_process",
                 on_click=callback_button_save_edits,
                 args=(process,),
             )
@@ -124,41 +126,47 @@ def render_tab(
             streamlit.button(
                 "Enable Edits",
                 width=130,
-                key=f"button_{state._KEY_PREFIX}_enable_edits",
+                key=f"{state.KEY_PREFIX}_button_enable_edits",
                 on_click=callback_button_enable_edits,
             )
             streamlit.button(
                 "Delete Process",
                 width=130,
-                key=f"button_{state._KEY_PREFIX}_delete_process",
+                key=f"{state.KEY_PREFIX}_button_delete_process",
                 on_click=callback_button_delete_process,
                 args=(process,),
             )
 
-    if state.get_is_editable():
-        (workcell_process_metadata_tab, workcell_process_swimlanes_tab), workcell_process_diagram_tab = (
+    if state.IsEditable.get():
+        (workcell_process_metadata, workcell_process_swimlanes), workcell_process_diagram = (
             streamlit.tabs(
                 ["Process Metadata", "Process Swimlanes"],
             ),
             None,
         )
     else:
-        workcell_process_metadata_tab, workcell_process_swimlanes_tab, workcell_process_diagram_tab = streamlit.tabs(
+        workcell_process_metadata, workcell_process_swimlanes, workcell_process_diagram = streamlit.tabs(
             ["Process Metadata", "Process Swimlanes", "Process Diagram"],
         )
 
-    with workcell_process_metadata_tab:
-        workcell_process_metadata.render_tab(
-            session_state_manager, process, state.get_is_editable(), state.get_force_update()
+    with workcell_process_metadata:
+        workcell_process_metadata_tab.render_tab(
+            session_state_manager,
+            process,
+            state.IsEditable.get(),
+            state.ForceUpdate.get(),
         )
 
-    with workcell_process_swimlanes_tab:
-        workcell_process_swimlanes.render_tab(
-            session_state_manager, process, state.get_is_editable(), state.get_force_update()
+    with workcell_process_swimlanes:
+        workcell_process_swimlanes_tab.render_tab(
+            session_state_manager,
+            process,
+            state.IsEditable.get(),
+            state.ForceUpdate.get(),
         )
 
-    if workcell_process_diagram_tab is not None:
-        with workcell_process_diagram_tab:
+    if workcell_process_diagram is not None:
+        with workcell_process_diagram:
             ...
 
-    state.set_force_update(False)
+    state.ForceUpdate.set(False)

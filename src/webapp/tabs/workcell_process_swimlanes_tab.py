@@ -1,3 +1,5 @@
+import collections
+
 import streamlit
 from django.db.models.functions import Lower
 from utils import SessionStateManager
@@ -16,55 +18,55 @@ def callback_button_add_swimlane(process: Process):
     swimlane = Swimlane(process=process, labware=None, multiplier_formula="")
 
     # add
-    state.get_swimlanes().append(swimlane)
+    state.SwimlaneList.get().append(swimlane)
 
     # Set initial values for new swimlane
-    state.set_selectbox_swimlane_labware(swimlane, None)
-    state.set_text_input_swimlane_multiplier(swimlane, "")
+    state.SelectboxSwimlaneLabware.set(None, swimlane)
+    state.TextInputSwimlaneMultiplier.set("", swimlane)
 
 
 def callback_button_move_swimlane_left(swimlane: Swimlane):
-    index = state.get_swimlanes().index(swimlane)
+    index = state.SwimlaneList.get().index(swimlane)
 
-    state.get_swimlanes().remove(swimlane)
+    state.SwimlaneList.get().remove(swimlane)
 
     # When moving left the insert position can suddenly be less than zero.
-    state.get_swimlanes().insert(max(index - 1, 0), swimlane)
+    state.SwimlaneList.get().insert(max(index - 1, 0), swimlane)
 
 
 def callback_button_move_swimlane_right(swimlane: Swimlane):
-    index = state.get_swimlanes().index(swimlane)
+    index = state.SwimlaneList.get().index(swimlane)
 
-    state.get_swimlanes().remove(swimlane)
+    state.SwimlaneList.get().remove(swimlane)
 
-    state.get_swimlanes().insert(index + 1, swimlane)
+    state.SwimlaneList.get().insert(index + 1, swimlane)
 
 
 def callback_button_delete_swimlane(swimlane: Swimlane):
-    state.get_swimlanes().remove(swimlane)
-    del state.get_swimlane_steps_dict()[swimlane]
+    state.SwimlaneList.get().remove(swimlane)
+    del state.SwimlaneStepsDict.get()[swimlane]
 
 
 def callback_button_swimlane_add_function_step(swimlane: Swimlane, insert_index: int):
     step = FunctionStep(swimlane=swimlane, function=None, parallelization_key="")
 
-    state.get_swimlane_steps_dict()[swimlane].insert(insert_index, step)
+    state.SwimlaneStepsDict.get()[swimlane].insert(insert_index, step)
 
-    state.set_selectbox_step_function(step, None)
-    state.set_selectbox_step_parallelization(step, None)
+    state.SelectboxStepFunction.set(None, step)
+    state.SelectboxStepParallelization.set(None, step)
 
 
 def callback_button_swimlane_add_process_step(swimlane: Swimlane, insert_index: int):
     step = ProcessStep(swimlane=swimlane, process=None, connected_swimlane=None)
 
-    state.get_swimlane_steps_dict()[swimlane].insert(insert_index, step)
+    state.SwimlaneStepsDict.get()[swimlane].insert(insert_index, step)
 
-    state.set_selectbox_step_process(step, None)
-    state.set_selectbox_step_swimlane(step, None)
+    state.SelectboxStepProcess.set(None, step)
+    state.SelectboxStepSwimlane.set(None, step)
 
 
 def callback_button_delete_step(swimlane: Swimlane, step: FunctionStep | ProcessStep):
-    state.get_swimlane_steps_dict()[swimlane].remove(step)
+    state.SwimlaneStepsDict.get()[swimlane].remove(step)
 
 
 #
@@ -80,34 +82,34 @@ def render_tab(
         with streamlit.container(horizontal_alignment="center"):
             streamlit.button(
                 "Add Swimlane",
-                key=f"button_{state._KEY_PREFIX}_add_swimlane",
+                key=f"{state.KEY_PREFIX}_button_add_swimlane",
                 on_click=callback_button_add_swimlane,
                 args=(process,),
             )
 
-    session_state_manager.add_persistent_keys(state.get_swimlanes_key())
-    session_state_manager.add_persistent_keys(state.get_swimlane_steps_dict_key())
+    session_state_manager.add_persistent_keys(state.SwimlaneList.key())
+    session_state_manager.add_persistent_keys(state.SwimlaneStepsDict.key())
     if not is_editable or force_update:
-        state.reset_swimlanes()
-        state.reset_swimlane_steps_dict()
+        state.SwimlaneList.set([])
+        state.SwimlaneStepsDict.set(collections.defaultdict(list))
 
         for swimlane_index in SwimlaneIndex.objects.filter(swimlane__process=process).order_by("index").all():
             swimlane = swimlane_index.swimlane
-            state.get_swimlanes().append(swimlane)
+            state.SwimlaneList.get().append(swimlane)
 
             for step_index in StepIndex.objects.filter(base_step__swimlane=swimlane).order_by("index").all():
                 step = step_index.base_step.cast()
 
-                state.get_swimlane_steps_dict()[swimlane].append(step)
+                state.SwimlaneStepsDict.get()[swimlane].append(step)
 
     global_parallelization_keys = {
         step.parallelization_key
-        for steps in state.get_swimlane_steps_dict().values()
+        for steps in state.SwimlaneStepsDict.get().values()
         for step in steps
         if isinstance(step, FunctionStep) and step.parallelization_key is not None and step.parallelization_key != ""
     }
 
-    swimlanes = state.get_swimlanes()
+    swimlanes = state.SwimlaneList.get()
 
     swimlane_chunks = [swimlanes[i : i + 3] for i in range(0, len(swimlanes), 3)]
 
@@ -123,7 +125,7 @@ def render_tab(
             for swimlane_index, swimlane in enumerate(swimlane_chunk):
                 swimlane_parallelization_keys = {
                     step.parallelization_key
-                    for step in state.get_swimlane_steps_dict()[swimlane]
+                    for step in state.SwimlaneStepsDict.get()[swimlane]
                     if isinstance(step, FunctionStep)
                     and step.parallelization_key is not None
                     and step.parallelization_key != ""
@@ -144,7 +146,7 @@ def render_tab(
                                     icon=":material/arrow_back_ios:",
                                     type="tertiary",
                                     help="Move Swimlane left",
-                                    key=f"{state._KEY_PREFIX}_button_move_swimlane_{swimlane.id}_left",
+                                    key=f"{state.KEY_PREFIX}_button_move_swimlane_{swimlane.id}_left",
                                     on_click=callback_button_move_swimlane_left,
                                     args=(swimlane,),
                                 )
@@ -153,16 +155,16 @@ def render_tab(
                             # Swimlane Labware Selectbox
                             #
                             session_state_manager.add_persistent_keys(
-                                state.get_selectbox_swimlane_labware_key(swimlane),
+                                state.SelectboxSwimlaneLabware.key(swimlane),
                             )
                             if not is_editable or force_update:
-                                state.set_selectbox_swimlane_labware(swimlane, swimlane.labware)
+                                state.SelectboxSwimlaneLabware.set(swimlane.labware, swimlane)
 
                             swimlane.labware = streamlit.selectbox(
                                 "Labware",
                                 Labware.objects.filter(workcell=process.workcell).order_by(Lower("name")).all(),
                                 format_func=lambda x: x.name,
-                                key=state.get_selectbox_swimlane_labware_key(swimlane),
+                                key=state.SelectboxSwimlaneLabware.key(swimlane),
                                 disabled=not is_editable,
                             )
 
@@ -175,7 +177,7 @@ def render_tab(
                                     icon=":material/arrow_forward_ios:",
                                     type="tertiary",
                                     help="Move Swimlane right",
-                                    key=f"{state._KEY_PREFIX}_button_move_swimlane_{swimlane.id}__right",
+                                    key=f"{state.KEY_PREFIX}_button_move_swimlane_{swimlane.id}__right",
                                     on_click=callback_button_move_swimlane_right,
                                     args=(swimlane,),
                                 )
@@ -184,15 +186,15 @@ def render_tab(
                         # Swimlane Multiplier formula
                         #
                         session_state_manager.add_persistent_keys(
-                            state.get_text_input_swimlane_multiplier_key(swimlane)
+                            state.TextInputSwimlaneMultiplier.key(swimlane),
                         )
                         if not is_editable or force_update:
-                            state.set_text_input_swimlane_multiplier(swimlane, swimlane.multiplier_formula)
+                            state.TextInputSwimlaneMultiplier.set(swimlane.multiplier_formula, swimlane)
 
                         swimlane.multiplier_formula = streamlit.text_input(
                             "Multiplier Formula",
                             help="Creates multiples of this swimlane for modelling dependent on the formula. May be parameterized with captialized X.",
-                            key=state.get_text_input_swimlane_multiplier_key(swimlane),
+                            key=state.TextInputSwimlaneMultiplier.key(swimlane),
                             disabled=not is_editable,
                         )
 
@@ -209,7 +211,7 @@ def render_tab(
                                 icon=":material/delete:",
                                 type="tertiary",
                                 help="Delete swimlane",
-                                key=f"{state._KEY_PREFIX}_button_swimlane_{swimlane.id}_delete",
+                                key=f"{state.KEY_PREFIX}_button_swimlane_{swimlane.id}_delete",
                                 on_click=callback_button_delete_swimlane,
                                 args=(swimlane,),
                             )
@@ -226,7 +228,7 @@ def render_tab(
                                 icon=":material/developer_board:",
                                 type="tertiary",
                                 help="Add Device Function",
-                                key=f"{state._KEY_PREFIX}_button_swimlane_{swimlane.id}_add_function_step_0",
+                                key=f"{state.KEY_PREFIX}_button_swimlane_{swimlane.id}_add_function_step_0",
                                 on_click=callback_button_swimlane_add_function_step,
                                 args=(swimlane, 0),
                             )
@@ -235,7 +237,7 @@ def render_tab(
                                 icon=":material/account_tree:",
                                 type="tertiary",
                                 help="Add Process",
-                                key=f"{state._KEY_PREFIX}_button_swimlane_{swimlane.id}_add_process_step_0",
+                                key=f"{state.KEY_PREFIX}_button_swimlane_{swimlane.id}_add_process_step_0",
                                 on_click=callback_button_swimlane_add_process_step,
                                 args=(swimlane, 0),
                             )
@@ -243,7 +245,7 @@ def render_tab(
                     #
                     # Render Steps
                     #
-                    for step_index, step in enumerate(state.get_swimlane_steps_dict()[swimlane]):
+                    for step_index, step in enumerate(state.SwimlaneStepsDict.get()[swimlane]):
                         with streamlit.container(border=True, gap=None):
                             with streamlit.container():
                                 #
@@ -254,10 +256,10 @@ def render_tab(
                                     # Step Function
                                     #
                                     session_state_manager.add_persistent_keys(
-                                        state.get_selectbox_step_function_key(step)
+                                        state.SelectboxStepFunction.key(step),
                                     )
                                     if not is_editable or force_update:
-                                        state.set_selectbox_step_function(step, step.function)
+                                        state.SelectboxStepFunction.set(step.function, step)
 
                                     step.function = streamlit.selectbox(
                                         "Device Function",
@@ -265,7 +267,7 @@ def render_tab(
                                             Function.objects.all(),
                                             key=lambda x: f"{x.device.name}: {x.name}".lower(),
                                         ),
-                                        key=state.get_selectbox_step_function_key(step),
+                                        key=state.SelectboxStepFunction.key(step),
                                         disabled=not is_editable,
                                         format_func=lambda x: f"{x.device.name}: {x.name}",
                                     )
@@ -274,10 +276,10 @@ def render_tab(
                                     # Step Parallelization Key
                                     #
                                     session_state_manager.add_persistent_keys(
-                                        state.get_selectbox_step_parallelization_key(step),
+                                        state.SelectboxStepParallelization.key(step),
                                     )
                                     if not is_editable or force_update:
-                                        state.set_selectbox_step_parallelization(step, step.parallelization_key)
+                                        state.SelectboxStepParallelization.set(step.parallelization_key, step)
 
                                     paralellization_key = streamlit.selectbox(
                                         "Function Parallelization Key",
@@ -287,7 +289,7 @@ def render_tab(
                                             if key not in swimlane_parallelization_keys
                                         },
                                         index=None,
-                                        key=state.get_selectbox_step_parallelization_key(step),
+                                        key=state.SelectboxStepParallelization.key(step),
                                         disabled=not is_editable,
                                         accept_new_options=True,
                                     )
@@ -303,10 +305,10 @@ def render_tab(
                                     # Step Process
                                     #
                                     session_state_manager.add_persistent_keys(
-                                        state.get_selectbox_step_process_key(step)
+                                        state.SelectboxStepProcess.key(step),
                                     )
                                     if not is_editable or force_update:
-                                        state.set_selectbox_step_process(step, step.process)
+                                        state.SelectboxStepProcess.set(step.process, step)
 
                                     step_process = step.process = streamlit.selectbox(
                                         "Process",
@@ -314,7 +316,7 @@ def render_tab(
                                         .exclude(id=process.id)
                                         .order_by(Lower("name"))
                                         .all(),
-                                        key=state.get_selectbox_step_process_key(step),
+                                        key=state.SelectboxStepProcess.key(step),
                                         disabled=not is_editable,
                                         format_func=lambda x: x.name,
                                     )
@@ -322,10 +324,10 @@ def render_tab(
                                     # Step Connected Swimlane
                                     #
                                     session_state_manager.add_persistent_keys(
-                                        state.get_selectbox_step_swimlane_key(step)
+                                        state.SelectboxStepSwimlane.key(step),
                                     )
                                     if not is_editable or force_update:
-                                        state.set_selectbox_step_swimlane(step, step.connected_swimlane)
+                                        state.SelectboxStepSwimlane.set(step.connected_swimlane, step)
 
                                     step.connected_swimlane = streamlit.selectbox(
                                         "Connected Swimlane",
@@ -335,7 +337,7 @@ def render_tab(
                                             process=step_process,
                                         ).all(),
                                         format_func=lambda x: x.name,
-                                        key=state.get_selectbox_step_swimlane_key(step),
+                                        key=state.SelectboxStepSwimlane.key(step),
                                         disabled=not is_editable,
                                     )
 
@@ -352,7 +354,7 @@ def render_tab(
                                         icon=":material/delete:",
                                         type="tertiary",
                                         help="Delete swimlane",
-                                        key=f"{state._KEY_PREFIX}_button_step_{step.id}_delete",
+                                        key=f"{state.KEY_PREFIX}_button_step_{step.id}_delete",
                                         on_click=callback_button_delete_step,
                                         args=(swimlane, step),
                                     )
@@ -367,7 +369,7 @@ def render_tab(
                                     icon=":material/developer_board:",
                                     type="tertiary",
                                     help="Add Device Function",
-                                    key=f"{state._KEY_PREFIX}_button_swimlane_{swimlane.id}_add_function_step_{step_index + 1}",
+                                    key=f"{state.KEY_PREFIX}_button_swimlane_{swimlane.id}_add_function_step_{step_index + 1}",
                                     on_click=callback_button_swimlane_add_function_step,
                                     args=(swimlane, step_index + 1),
                                 )
@@ -376,7 +378,7 @@ def render_tab(
                                     icon=":material/account_tree:",
                                     type="tertiary",
                                     help="Add Process",
-                                    key=f"{state._KEY_PREFIX}_button_swimlane_{swimlane.id}_add_process_step_{step_index + 1}",
+                                    key=f"{state.KEY_PREFIX}_button_swimlane_{swimlane.id}_add_process_step_{step_index + 1}",
                                     on_click=callback_button_swimlane_add_process_step,
                                     args=(swimlane, step_index + 1),
                                 )

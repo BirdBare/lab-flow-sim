@@ -1,111 +1,133 @@
-import collections
+import collections as _collections
 
 import streamlit
 
-from orm.device.models import Function
-from orm.workcell.models import Labware
-from orm.workcell_process.models import FunctionStep, Process, ProcessStep, Swimlane
+from orm.device.models import Function as _Function
+from orm.workcell.models import Labware as _Labware
+from orm.workcell_process.models import FunctionStep as _FunctionStep
+from orm.workcell_process.models import Process as _Process
+from orm.workcell_process.models import ProcessStep as _ProcessStep
+from orm.workcell_process.models import Swimlane as _Swimlane
+from webapp.utils import SessionStateManager
 
-_KEY_PREFIX = "workcell_process_swimlanes"
-
-
-#
-# SWIMLANE STEPS
-#
-def get_swimlanes_key() -> str:
-    return f"{_KEY_PREFIX}_swimlanes"
+KEY_PREFIX = "workcell_process_swimlanes"
 
 
-def get_swimlanes() -> list[Swimlane]:
-    if get_swimlanes_key() not in streamlit.session_state:
-        reset_swimlanes()
+class SwimlaneList(SessionStateManager.SessionStateItem[list[_Swimlane]]):
+    @classmethod
+    def get(cls) -> list[_Swimlane]:
+        if cls.key() not in streamlit.session_state:
+            cls.set([])
 
-    return streamlit.session_state[get_swimlanes_key()]
+        return streamlit.session_state[cls.key()]
 
+    @classmethod
+    def set(cls, value: list[_Swimlane]) -> None:
+        streamlit.session_state[cls.key()] = value
 
-def reset_swimlanes():
-    streamlit.session_state[get_swimlanes_key()] = []
-
-
-#
-# SWIMLANE STEPS
-#
-def get_swimlane_steps_dict_key() -> str:
-    return f"{_KEY_PREFIX}_swimlane_steps_dict"
-
-
-def get_swimlane_steps_dict() -> dict[Swimlane, list[FunctionStep | ProcessStep]]:
-    if get_swimlane_steps_dict_key() not in streamlit.session_state:
-        reset_swimlane_steps_dict()
-
-    return streamlit.session_state[get_swimlane_steps_dict_key()]
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_swimlane_list")
 
 
-def reset_swimlane_steps_dict():
-    streamlit.session_state[get_swimlane_steps_dict_key()] = collections.defaultdict(list)
+class SwimlaneStepsDict(
+    SessionStateManager.SessionStateItem[_collections.defaultdict[_Swimlane, list[_FunctionStep | _ProcessStep]]],
+):
+    @classmethod
+    def get(cls) -> _collections.defaultdict[_Swimlane, list[_FunctionStep | _ProcessStep]]:
+        if cls.key() not in streamlit.session_state:
+            cls.set(_collections.defaultdict(list))
+
+        return streamlit.session_state[cls.key()]
+
+    @classmethod
+    def set(cls, value: _collections.defaultdict[_Swimlane, list[_FunctionStep | _ProcessStep]]) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_swimlane_steps_dict")
 
 
-#
-# SELECTBOX SWIMLANE LABWARE
-#
-def get_selectbox_swimlane_labware_key(swimlane: Swimlane) -> str:
-    return f"{_KEY_PREFIX}_selectbox_swimlane_{swimlane.id}_labware"
+class SelectboxSwimlaneLabware(SessionStateManager.SessionStateItem[_Labware | None]):
+    @classmethod
+    def get(cls, swimlane: _Swimlane) -> _Labware | None:
+        return streamlit.session_state[cls.key(swimlane)]
+
+    @classmethod
+    def set(cls, value: _Labware | None, swimlane: _Swimlane) -> None:
+        streamlit.session_state[cls.key(swimlane)] = value
+
+    @classmethod
+    def key(cls, swimlane: _Swimlane) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_selectbox_swimlane_{swimlane.id}_labware")
 
 
-def set_selectbox_swimlane_labware(swimlane: Swimlane, value: Labware | None):
-    streamlit.session_state[get_selectbox_swimlane_labware_key(swimlane)] = value
+class TextInputSwimlaneMultiplier(SessionStateManager.SessionStateItem[str]):
+    @classmethod
+    def get(cls, swimlane: _Swimlane) -> str:
+        return streamlit.session_state[cls.key(swimlane)]
+
+    @classmethod
+    def set(cls, value: str, swimlane: _Swimlane) -> None:
+        streamlit.session_state[cls.key(swimlane)] = value
+
+    @classmethod
+    def key(cls, swimlane: _Swimlane) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_selectbox_swimlane_{swimlane.id}_multiplier")
 
 
-#
-# TEXT INPUT MULTIPLIER
-#
-def get_text_input_swimlane_multiplier_key(swimlane: Swimlane) -> str:
-    return f"{_KEY_PREFIX}_text_input_swimlane_{swimlane.id}_multiplier"
+class SelectboxStepFunction(SessionStateManager.SessionStateItem[_Function | None]):
+    @classmethod
+    def get(cls, step: _FunctionStep) -> _Function | None:
+        return streamlit.session_state[cls.key(step)]
+
+    @classmethod
+    def set(cls, value: _Function | None, step: _FunctionStep) -> None:
+        streamlit.session_state[cls.key(step)] = value
+
+    @classmethod
+    def key(cls, step: _FunctionStep) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_selectbox_step_{step.id}_function")
 
 
-def set_text_input_swimlane_multiplier(swimlane: Swimlane, value: str):
-    streamlit.session_state[get_text_input_swimlane_multiplier_key(swimlane)] = value
+class SelectboxStepParallelization(SessionStateManager.SessionStateItem[str | None]):
+    @classmethod
+    def get(cls, step: _FunctionStep) -> str | None:
+        return streamlit.session_state[cls.key(step)]
+
+    @classmethod
+    def set(cls, value: str | None, step: _FunctionStep) -> None:
+        streamlit.session_state[cls.key(step)] = value
+
+    @classmethod
+    def key(cls, step: _FunctionStep) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_selectbox_step_{step.id}_parallelization")
 
 
-#
-# SELECTBOX STEP FUNCTION
-#
-def get_selectbox_step_function_key(step: FunctionStep) -> str:
-    return f"{_KEY_PREFIX}_selectbox_step_{step.id}_function"
+class SelectboxStepProcess(SessionStateManager.SessionStateItem[_Process | None]):
+    @classmethod
+    def get(cls, step: _ProcessStep) -> _Process | None:
+        return streamlit.session_state[cls.key(step)]
+
+    @classmethod
+    def set(cls, value: _Process | None, step: _ProcessStep) -> None:
+        streamlit.session_state[cls.key(step)] = value
+
+    @classmethod
+    def key(cls, step: _ProcessStep) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_selectbox_step_{step.id}_process")
 
 
-def set_selectbox_step_function(step: FunctionStep, value: Function | None):
-    streamlit.session_state[get_selectbox_step_function_key(step)] = value
+class SelectboxStepSwimlane(SessionStateManager.SessionStateItem[_Swimlane | None]):
+    @classmethod
+    def get(cls, step: _ProcessStep) -> _Swimlane | None:
+        return streamlit.session_state[cls.key(step)]
 
+    @classmethod
+    def set(cls, value: _Swimlane | None, step: _ProcessStep) -> None:
+        streamlit.session_state[cls.key(step)] = value
 
-#
-# SELECTBOX STEP PARALLELIZATION
-#
-def get_selectbox_step_parallelization_key(step: FunctionStep) -> str:
-    return f"{_KEY_PREFIX}_selectbox_step_{step.id}_parallelization"
-
-
-def set_selectbox_step_parallelization(step: FunctionStep, value: str | None):
-    streamlit.session_state[get_selectbox_step_parallelization_key(step)] = value
-
-
-#
-# SELECTBOX STEP PROCESS
-#
-def get_selectbox_step_process_key(step: ProcessStep) -> str:
-    return f"{_KEY_PREFIX}_selectbox_step_{step.id}_process"
-
-
-def set_selectbox_step_process(step: ProcessStep, value: Process | None):
-    streamlit.session_state[get_selectbox_step_process_key(step)] = value
-
-
-#
-# SELECTBOX STEP SWIMLANE
-#
-def get_selectbox_step_swimlane_key(step: ProcessStep) -> str:
-    return f"{_KEY_PREFIX}_selectbox_step_{step.id}_swimlane"
-
-
-def set_selectbox_step_swimlane(step: ProcessStep, value: Swimlane | None):
-    streamlit.session_state[get_selectbox_step_swimlane_key(step)] = value
+    @classmethod
+    def key(cls, step: _ProcessStep) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_selectbox_step_{step.id}_swimlane")

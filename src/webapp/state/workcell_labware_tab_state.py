@@ -1,15 +1,19 @@
 import streamlit
 
-_KEY_PREFIX = "workcell_labware"
+from webapp.utils import SessionStateManager
+
+KEY_PREFIX = "WORKCELL_LABWARE_TAB_STATE"
 
 
-def get_dialog_is_shown_key() -> str:
-    return f"{_KEY_PREFIX}_dialog_is_show"
+class DialogIsShown(SessionStateManager.SessionStateItem[bool]):
+    @classmethod
+    def get(cls) -> bool:
+        return streamlit.session_state.get(cls.key(), False)
 
+    @classmethod
+    def set(cls, value: bool) -> None:
+        streamlit.session_state[cls.key()] = value
 
-def get_dialog_is_shown() -> bool:
-    return streamlit.session_state.get(get_dialog_is_shown_key(), False)
-
-
-def set_dialog_is_shown(value: bool):
-    streamlit.session_state[get_dialog_is_shown_key()] = value
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_dialog_is_shown")

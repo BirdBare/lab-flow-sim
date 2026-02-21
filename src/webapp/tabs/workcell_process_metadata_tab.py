@@ -15,24 +15,24 @@ def render_tab(
     force_update: bool,
 ):
 
-    session_state_manager.add_persistent_keys(state.get_text_input_process_name_key())
+    session_state_manager.add_persistent_keys(state.TextInputProcessName.key())
     if not is_editable or force_update:
-        state.set_text_input_process_name(process.name)
+        state.TextInputProcessName.set(process.name)
 
     process.name = streamlit.text_input(
         "Process Name",
-        key=state.get_text_input_process_name_key(),
+        key=state.TextInputProcessName.key(),
         width=750,
         disabled=not is_editable,
     )
 
-    session_state_manager.add_persistent_keys(state.get_text_area_process_comments_key())
+    session_state_manager.add_persistent_keys(state.TextAreaProcessComments.key())
     if not is_editable or force_update:
-        state.set_text_area_process_comments(process.comments)
+        state.TextAreaProcessComments.set(process.comments)
 
     process.comments = streamlit.text_area(
         "Comments",
-        key=state.get_text_area_process_comments_key(),
+        key=state.TextAreaProcessComments.key(),
         height=500,
         width=750,
         disabled=not is_editable,

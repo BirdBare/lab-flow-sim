@@ -1,24 +1,21 @@
+import typing
+
 import streamlit
 
 
 class SessionStateManager:
-    class State[T]:
+    class SessionStateItem[T]:
         @staticmethod
-        def get() -> T: ...
+        def get(*args: typing.Any, **kwargs: typing.Any) -> T:
+            raise NotImplementedError
 
-        def set(value: T): ...
-
-        def key() -> str:
-            return "<Some Key>"
-
-    class StateWithParams[I, T]:
         @staticmethod
-        def get(input: I) -> T: ...
+        def set(value: T, *args: typing.Any, **kwargs: typing.Any) -> None:
+            raise NotImplementedError
 
-        def set(input: I, value: T): ...
-
-        def key(input: I) -> str:
-            return f"<Some Key> {input}"
+        @staticmethod
+        def key(*args: typing.Any, **kwargs: typing.Any) -> str:
+            raise NotImplementedError
 
     def __init__(self, *persistent_keys: str):
         self._skip_delete = False

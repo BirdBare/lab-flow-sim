@@ -54,10 +54,6 @@ def get_selectbox_swimlane_labware_key(swimlane: Swimlane) -> str:
     return f"{_KEY_PREFIX}_selectbox_swimlane_{swimlane.id}_labware"
 
 
-def get_selectbox_swimlane_labware(swimlane: Swimlane) -> Labware | None:
-    return streamlit.session_state[get_selectbox_swimlane_labware_key(swimlane)]
-
-
 def set_selectbox_swimlane_labware(swimlane: Swimlane, value: Labware | None):
     streamlit.session_state[get_selectbox_swimlane_labware_key(swimlane)] = value
 
@@ -67,10 +63,6 @@ def set_selectbox_swimlane_labware(swimlane: Swimlane, value: Labware | None):
 #
 def get_text_input_swimlane_multiplier_key(swimlane: Swimlane) -> str:
     return f"{_KEY_PREFIX}_text_input_swimlane_{swimlane.id}_multiplier"
-
-
-def get_text_input_swimlane_multiplier(swimlane: Swimlane) -> str:
-    return streamlit.session_state[get_text_input_swimlane_multiplier_key(swimlane)]
 
 
 def set_text_input_swimlane_multiplier(swimlane: Swimlane, value: str):
@@ -84,10 +76,6 @@ def get_selectbox_step_function_key(step: FunctionStep) -> str:
     return f"{_KEY_PREFIX}_selectbox_step_{step.id}_function"
 
 
-def get_selectbox_step_function(step: FunctionStep) -> Function | None:
-    return streamlit.session_state[get_selectbox_step_function_key(step)]
-
-
 def set_selectbox_step_function(step: FunctionStep, value: Function | None):
     streamlit.session_state[get_selectbox_step_function_key(step)] = value
 
@@ -97,10 +85,6 @@ def set_selectbox_step_function(step: FunctionStep, value: Function | None):
 #
 def get_selectbox_step_parallelization_key(step: FunctionStep) -> str:
     return f"{_KEY_PREFIX}_selectbox_step_{step.id}_parallelization"
-
-
-def get_selectbox_step_parallelization(step: FunctionStep) -> str | None:
-    return streamlit.session_state[get_selectbox_step_parallelization_key(step)]
 
 
 def set_selectbox_step_parallelization(step: FunctionStep, value: str | None):
@@ -114,10 +98,6 @@ def get_selectbox_step_process_key(step: ProcessStep) -> str:
     return f"{_KEY_PREFIX}_selectbox_step_{step.id}_process"
 
 
-def get_selectbox_step_process(step: ProcessStep) -> Process | None:
-    return streamlit.session_state[get_selectbox_step_process_key(step)]
-
-
 def set_selectbox_step_process(step: ProcessStep, value: Process | None):
     streamlit.session_state[get_selectbox_step_process_key(step)] = value
 
@@ -129,10 +109,6 @@ def get_selectbox_step_swimlane_key(step: ProcessStep) -> str:
     return f"{_KEY_PREFIX}_selectbox_step_{step.id}_swimlane"
 
 
-def get_selectbox_step_swimlane(step: ProcessStep) -> Swimlane | None:
-    return streamlit.session_state[get_selectbox_step_swimlane_key(step)]
-
-
 def set_selectbox_step_swimlane(step: ProcessStep, value: Swimlane | None):
     streamlit.session_state[get_selectbox_step_swimlane_key(step)] = value
 
@@ -140,9 +116,9 @@ def set_selectbox_step_swimlane(step: ProcessStep, value: Swimlane | None):
 #
 # BUTTON CALLBACKS
 #
-def callback_button_add_swimlane():
+def callback_button_add_swimlane(process: Process):
     # set both as none. Will be updated if process is saved.
-    swimlane = Swimlane(labware=None, multiplier_formula="")
+    swimlane = Swimlane(process=process, labware=None, multiplier_formula="")
 
     # add
     get_swimlanes().append(swimlane)
@@ -192,6 +168,10 @@ def callback_button_swimlane_add_process_step(swimlane: Swimlane, insert_index: 
     set_selectbox_step_swimlane(step, None)
 
 
+def callback_button_delete_step(swimlane: Swimlane, step: FunctionStep | ProcessStep):
+    get_swimlane_steps_dict()[swimlane].remove(step)
+
+
 #
 # TAB
 #
@@ -207,6 +187,7 @@ def render_tab(
                 "Add Swimlane",
                 key=f"button_{_KEY_PREFIX}_add_swimlane",
                 on_click=callback_button_add_swimlane,
+                args=(process,),
             )
 
     session_state_manager.add_persistent_keys(get_swimlanes_key())
@@ -316,6 +297,9 @@ def render_tab(
                             disabled=not is_editable,
                         )
 
+                    #
+                    # Swimlane delete
+                    #
                     with streamlit.container(
                         horizontal=True,
                         horizontal_alignment="right",
@@ -361,88 +345,112 @@ def render_tab(
                     # Render Steps
                     #
                     for step_index, step in enumerate(get_swimlane_steps_dict()[swimlane]):
-                        with streamlit.container(border=True):
+                        with streamlit.container(border=True, gap=None):
+                            with streamlit.container():
+                                #
+                                # Function Step
+                                #
+                                if isinstance(step, FunctionStep):
+                                    #
+                                    # Step Function
+                                    #
+                                    session_state_manager.add_persistent_keys(get_selectbox_step_function_key(step))
+                                    if not is_editable or force_update:
+                                        set_selectbox_step_function(step, step.function)
+
+                                    step.function = streamlit.selectbox(
+                                        "Device Function",
+                                        sorted(
+                                            Function.objects.all(),
+                                            key=lambda x: f"{x.device.name}: {x.name}".lower(),
+                                        ),
+                                        key=get_selectbox_step_function_key(step),
+                                        disabled=not is_editable,
+                                        format_func=lambda x: f"{x.device.name}: {x.name}",
+                                    )
+
+                                    #
+                                    # Step Parallelization Key
+                                    #
+                                    session_state_manager.add_persistent_keys(
+                                        get_selectbox_step_parallelization_key(step),
+                                    )
+                                    if not is_editable or force_update:
+                                        set_selectbox_step_parallelization(step, step.parallelization_key)
+
+                                    paralellization_key = streamlit.selectbox(
+                                        "Function Parallelization Key",
+                                        {
+                                            key
+                                            for key in global_parallelization_keys
+                                            if key not in swimlane_parallelization_keys
+                                        },
+                                        index=None,
+                                        key=get_selectbox_step_parallelization_key(step),
+                                        disabled=not is_editable,
+                                        accept_new_options=True,
+                                    )
+                                    if paralellization_key is None:
+                                        paralellization_key = ""
+                                    step.parallelization_key = paralellization_key
+
+                                #
+                                # Process Step
+                                #
+                                else:
+                                    #
+                                    # Step Process
+                                    #
+                                    session_state_manager.add_persistent_keys(get_selectbox_step_process_key(step))
+                                    if not is_editable or force_update:
+                                        set_selectbox_step_process(step, step.process)
+
+                                    step_process = step.process = streamlit.selectbox(
+                                        "Process",
+                                        Process.objects.filter(workcell=process.workcell)
+                                        .exclude(id=process.id)
+                                        .order_by(Lower("name"))
+                                        .all(),
+                                        key=get_selectbox_step_process_key(step),
+                                        disabled=not is_editable,
+                                        format_func=lambda x: x.name,
+                                    )
+                                    #
+                                    # Step Connected Swimlane
+                                    #
+                                    session_state_manager.add_persistent_keys(get_selectbox_step_swimlane_key(step))
+                                    if not is_editable or force_update:
+                                        set_selectbox_step_swimlane(step, step.connected_swimlane)
+
+                                    step.connected_swimlane = streamlit.selectbox(
+                                        "Connected Swimlane",
+                                        []
+                                        if step_process is None
+                                        else Swimlane.objects.filter(
+                                            process=step_process,
+                                        ).all(),
+                                        format_func=lambda x: x.name,
+                                        key=get_selectbox_step_swimlane_key(step),
+                                        disabled=not is_editable,
+                                    )
+
                             #
-                            # Function Step
+                            # Step delete
                             #
-                            if isinstance(step, FunctionStep):
-                                #
-                                # Step Function
-                                #
-                                session_state_manager.add_persistent_keys(get_selectbox_step_function_key(step))
-                                if not is_editable or force_update:
-                                    set_selectbox_step_function(step, step.function)
-
-                                step.function = streamlit.selectbox(
-                                    "Device Function",
-                                    sorted(Function.objects.all(), key=lambda x: f"{x.device.name}: {x.name}".lower()),
-                                    key=get_selectbox_step_function_key(step),
-                                    disabled=not is_editable,
-                                    format_func=lambda x: f"{x.device.name}: {x.name}",
-                                )
-
-                                #
-                                # Step Parallelization Key
-                                #
-                                session_state_manager.add_persistent_keys(get_selectbox_step_parallelization_key(step))
-                                if not is_editable or force_update:
-                                    set_selectbox_step_parallelization(step, step.parallelization_key)
-
-                                paralellization_key = streamlit.selectbox(
-                                    "Function Parallelization Key",
-                                    {
-                                        key
-                                        for key in global_parallelization_keys
-                                        if key not in swimlane_parallelization_keys
-                                    },
-                                    index=None,
-                                    key=get_selectbox_step_parallelization_key(step),
-                                    disabled=not is_editable,
-                                    accept_new_options=True,
-                                )
-                                if paralellization_key is None:
-                                    paralellization_key = ""
-                                step.parallelization_key = paralellization_key
-
-                            #
-                            # Process Step
-                            #
-                            else:
-                                #
-                                # Step Process
-                                #
-                                session_state_manager.add_persistent_keys(get_selectbox_step_process_key(step))
-                                if not is_editable or force_update:
-                                    set_selectbox_step_process(step, step.process)
-
-                                step_process = step.process = streamlit.selectbox(
-                                    "Process",
-                                    Process.objects.filter(workcell=process.workcell)
-                                    .exclude(id=process.id)
-                                    .order_by(Lower("name"))
-                                    .all(),
-                                    key=get_selectbox_step_process_key(step),
-                                    disabled=not is_editable,
-                                    format_func=lambda x: x.name,
-                                )
-                                #
-                                # Step Connected Swimlane
-                                #
-                                session_state_manager.add_persistent_keys(get_selectbox_step_swimlane_key(step))
-                                if not is_editable or force_update:
-                                    set_selectbox_step_swimlane(step, step.connected_swimlane)
-
-                                step.connected_swimlane = streamlit.selectbox(
-                                    "Connected Swimlane",
-                                    []
-                                    if step_process is None
-                                    else Swimlane.objects.filter(
-                                        process=step_process,
-                                    ).all(),
-                                    format_func=lambda x: x.name,
-                                    key=get_selectbox_step_swimlane_key(step),
-                                    disabled=not is_editable,
-                                )
+                            with streamlit.container(
+                                horizontal=True,
+                                horizontal_alignment="right",
+                            ):
+                                if is_editable is True:
+                                    streamlit.button(
+                                        "",
+                                        icon=":material/delete:",
+                                        type="tertiary",
+                                        help="Delete swimlane",
+                                        key=f"{_KEY_PREFIX}_button_step_{step.id}_delete",
+                                        on_click=callback_button_delete_step,
+                                        args=(swimlane, step),
+                                    )
 
                         #
                         # New step buttons

@@ -2,6 +2,24 @@ import streamlit
 
 
 class SessionStateManager:
+    class State[T]:
+        @staticmethod
+        def get() -> T: ...
+
+        def set(value: T): ...
+
+        def key() -> str:
+            return "<Some Key>"
+
+    class StateWithParams[I, T]:
+        @staticmethod
+        def get(input: I) -> T: ...
+
+        def set(input: I, value: T): ...
+
+        def key(input: I) -> str:
+            return f"<Some Key> {input}"
+
     def __init__(self, *persistent_keys: str):
         self._skip_delete = False
         self._persistent_keys: set[str] = set()

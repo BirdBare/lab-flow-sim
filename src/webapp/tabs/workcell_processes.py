@@ -1,13 +1,16 @@
 import streamlit
+from django.db.models.functions import Lower
 from utils import SessionStateManager
 
 from orm.workcell.models import Workcell
+from orm.workcell_process.models import Process
+from webapp.tabs import workcell_process_metadata, workcell_process_swimlanes
 
 _KEY_PREFIX = "workcell_processes"
 
 
 #
-# WORKCELL_METADATA_TAB_IS_EDITABLE
+# IS_EDITABLE
 #
 def get_is_editable_key() -> str:
     return f"{_KEY_PREFIX}_is_editable"
@@ -22,8 +25,70 @@ def get_is_editable() -> bool:
 
 
 #
+# FORCE UPDATE
+#
+def get_force_update_key() -> str:
+    return f"{_KEY_PREFIX}_force_update"
+
+
+def get_force_update() -> bool:
+    return streamlit.session_state.get(get_force_update_key(), False)
+
+
+def set_force_update(value: bool):
+    streamlit.session_state[get_force_update_key()] = value
+
+
+#
+# Processes
+#
+def get_processes_key() -> str:
+    return f"{_KEY_PREFIX}_processes"
+
+
+def get_processes() -> list[Process]:
+    if get_processes_key() not in streamlit.session_state:
+        reset_processes()
+
+    return streamlit.session_state[get_processes_key()]
+
+
+def reset_processes():
+    streamlit.session_state[get_processes_key()] = []
+
+
+#
+# SELECTBOX_PROCESS
+#
+def get_selectbox_process_key() -> str:
+    return f"{_KEY_PREFIX}_selectbox_process"
+
+
+def set_selectbox_process(value: Process):
+    streamlit.session_state[get_selectbox_process_key()] = value
+
+
+def get_selectbox_process() -> Process:
+    return streamlit.session_state.get(get_selectbox_process_key(), False)
+
+
+#
 # BUTTON CALLBACKS
 #
+def callback_button_new_process(workcell=Workcell):
+    set_is_editable(True)
+    set_force_update(True)
+
+    process = Process(workcell=workcell, name="New Process - RENAME ME", comments="")
+
+    get_processes().append(process)
+    set_selectbox_process(process)
+
+
+def callback_button_delete_process():
+    set_is_editable(True)
+
+
 def callback_button_enable_edits():
     set_is_editable(True)
 
@@ -33,101 +98,94 @@ def callback_button_discard_edits():
 
 
 def callback_button_save_edits():
-    from pages.workcells import get_selectbox_workcell, set_selectbox_workcell
-
-    workcell = get_selectbox_workcell()
-    workcell.name = get_text_input_workcell_name()
-    workcell.comments = get_text_area_workcell_comments()
-    workcell.save()
-
-    set_selectbox_workcell(workcell)
-
     set_is_editable(False)
-
-
-#
-# WORKCELL NAME
-#
-def get_text_input_workcell_name_key() -> str:
-    return f"{_KEY_PREFIX}_text_input_workcell_name"
-
-
-def get_text_input_workcell_name() -> str:
-    return streamlit.session_state[get_text_input_workcell_name_key()]
-
-
-def set_text_input_workcell_name(value: str):
-    streamlit.session_state[get_text_input_workcell_name_key()] = value
-
-
-#
-# WORKCELL COMMENTS
-#
-def get_text_area_workcell_comments_key() -> str:
-    return f"{_KEY_PREFIX}_text_area_workcell_comments"
-
-
-def get_text_area_workcell_comments() -> str:
-    return streamlit.session_state[get_text_area_workcell_comments_key()]
-
-
-def set_text_area_workcell_comments(value: str):
-    streamlit.session_state[get_text_area_workcell_comments_key()] = value
 
 
 #
 # TAB
 #
-def render_workcell_metadata_tab(
+def render_tab(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):
     session_state_manager.add_persistent_keys(get_is_editable_key())
 
-    with streamlit.container(horizontal=True):
+    session_state_manager.add_persistent_keys(get_processes_key())
+    if not get_is_editable():
+        reset_processes()
+        for process in Process.objects.filter(workcell=workcell).order_by(Lower("name")).all():
+            get_processes().append(process)
+
+    with streamlit.container(horizontal=True, vertical_alignment="bottom"):
+        session_state_manager.add_persistent_keys("selectbox_process")
+        process = streamlit.selectbox(
+            "Select A Process",
+            get_processes(),
+            key=get_selectbox_process_key(),
+            disabled=get_is_editable(),
+            format_func=lambda x: x.name,
+            width=600,
+        )
+
         if not get_is_editable():
             streamlit.button(
-                "Enable Edits",
-                key=f"button_{_KEY_PREFIX}_enable_edits",
-                on_click=callback_button_enable_edits,
-                width=120,
+                "New Process",
+                width=130,
+                key=f"button_{_KEY_PREFIX}_new_process",
+                on_click=callback_button_new_process,
+                args=(workcell,),
             )
 
-        else:
+        if process is None:
+            streamlit.stop()
+
+        if get_is_editable():
             streamlit.button(
                 "Discard Edits",
-                key=f"button_{_KEY_PREFIX}_discard_edits",
+                width=130,
+                key=f"button_{_KEY_PREFIX}_enable_edits",
                 on_click=callback_button_discard_edits,
-                width=120,
             )
             streamlit.button(
                 "Save Edits",
-                key=f"button_{_KEY_PREFIX}_save_edits",
+                width=130,
+                key=f"button_{_KEY_PREFIX}_delete_process",
                 on_click=callback_button_save_edits,
-                width=120,
+            )
+        else:
+            streamlit.button(
+                "Enable Edits",
+                width=130,
+                key=f"button_{_KEY_PREFIX}_enable_edits",
+                on_click=callback_button_enable_edits,
+            )
+            streamlit.button(
+                "Delete Process",
+                width=130,
+                key=f"button_{_KEY_PREFIX}_delete_process",
+                on_click=callback_button_delete_process,
             )
 
-    session_state_manager.add_persistent_keys(get_text_input_workcell_name_key())
-    if not get_is_editable():
-        set_text_input_workcell_name(workcell.name)
+    if get_is_editable():
+        (workcell_process_metadata_tab, workcell_process_swimlanes_tab), workcell_process_diagram_tab = (
+            streamlit.tabs(
+                ["Process Metadata", "Process Swimlanes"],
+            ),
+            None,
+        )
+    else:
+        workcell_process_metadata_tab, workcell_process_swimlanes_tab, workcell_process_diagram_tab = streamlit.tabs(
+            ["Process Metadata", "Process Swimlanes", "Process Diagram"],
+        )
 
-    streamlit.text_input(
-        "Workcell Name",
-        value=workcell.name,
-        key=get_text_input_workcell_name_key(),
-        width=750,
-        disabled=not get_is_editable(),
-    )
+    with workcell_process_metadata_tab:
+        workcell_process_metadata.render_tab(session_state_manager, process, get_is_editable(), get_force_update())
 
-    session_state_manager.add_persistent_keys(get_text_area_workcell_comments_key())
-    if not get_is_editable():
-        set_text_area_workcell_comments(workcell.comments)
+    with workcell_process_swimlanes_tab:
+        workcell_process_swimlanes.render_tab(session_state_manager, process, get_is_editable(), get_force_update())
 
-    streamlit.text_area(
-        "Comments",
-        value=workcell.comments,
-        key=get_text_area_workcell_comments_key(),
-        height=500,
-        width=750,
-        disabled=not get_is_editable(),
-    )
+    if workcell_process_diagram_tab is not None:
+        with workcell_process_diagram_tab:
+            ...
+
+    set_force_update(False)

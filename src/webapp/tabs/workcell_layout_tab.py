@@ -79,12 +79,17 @@ def callback_button_add_device(workcell: Workcell):
     state.StreamlitFlowSelectedID.set(new_node.id)
 
 
-def callback_button_set_assigned_device_device(assigned_device: AssignedDevice):
-    device = state.SelectboxDevice.get()
+def callback_selectbox_set_assigned_device_device(assigned_device: AssignedDevice):
+    device = state.SelectboxAssignedDeviceDevice.get()
     if device is None:
         return
 
     assigned_device.device = device
+
+
+def callback_number_input_set_device_connection_distance(device_connection: DeviceConnection):
+    device_connection.distance = state.NumberInputDeviceConnectionDistance.get()
+    print("Set distance")
 
 
 def callback_button_deselect():
@@ -119,7 +124,8 @@ def render(
         state.StreamlitFlowSelectedID.key(),
         state.AssignedDeviceDict.key(),
         state.DeviceConnectionDict.key(),
-        state.SelectboxDevice.key(),
+        state.SelectboxAssignedDeviceDevice.key(),
+        state.NumberInputDeviceConnectionDistance.key(),
     )
 
     if not state.IsEditable.get():
@@ -246,15 +252,15 @@ def render(
                     device_index = None
 
                 if state.ForceUpdate.get():
-                    state.SelectboxDevice.set(device)
+                    state.SelectboxAssignedDeviceDevice.set(device)
 
                 streamlit.selectbox(
                     "Device",
                     devices,
                     index=device_index,
                     format_func=lambda device: device.name,
-                    on_change=callback_button_set_assigned_device_device,
-                    key=state.SelectboxDevice.key(),
+                    on_change=callback_selectbox_set_assigned_device_device,
+                    key=state.SelectboxAssignedDeviceDevice.key(),
                     args=(assigned_device,),
                 )
 
@@ -267,7 +273,18 @@ def render(
 
                 streamlit.title("Edge Configuration")
 
-                streamlit.number_input("Distance", min_value=0, step=1)
+                if state.ForceUpdate.get():
+                    print("FORCE")
+                    state.NumberInputDeviceConnectionDistance.set(device_connection.distance)
+
+                streamlit.number_input(
+                    "Distance",
+                    min_value=0,
+                    step=1,
+                    on_change=callback_number_input_set_device_connection_distance,
+                    args=(device_connection,),
+                    key=state.NumberInputDeviceConnectionDistance.key(),
+                )
 
                 with streamlit.container(horizontal=True, horizontal_alignment="center"):
                     streamlit.button("Deselect", width=100, on_click=callback_button_deselect)

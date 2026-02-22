@@ -102,10 +102,10 @@ class DeviceConnectionDict(SessionStateManager.SessionStateItem[dict[str, _Devic
         return SessionStateManager.key(f"{KEY_PREFIX}_device__connection_dict")
 
 
-class SelectboxDevice(SessionStateManager.SessionStateItem[_Device | None]):
+class SelectboxAssignedDeviceDevice(SessionStateManager.SessionStateItem[_Device | None]):
     @classmethod
     def get(cls) -> _Device | None:
-        return streamlit.session_state[cls.key()]
+        return streamlit.session_state.get(cls.key(), None)
 
     @classmethod
     def set(cls, value: _Device | None) -> None:
@@ -113,4 +113,18 @@ class SelectboxDevice(SessionStateManager.SessionStateItem[_Device | None]):
 
     @classmethod
     def key(cls) -> SessionStateManager.key:
-        return SessionStateManager.key(f"{KEY_PREFIX}_selectbox_device")
+        return SessionStateManager.key(f"{KEY_PREFIX}_selectbox_assigned_device_device")
+
+
+class NumberInputDeviceConnectionDistance(SessionStateManager.SessionStateItem[int]):
+    @classmethod
+    def get(cls) -> int:
+        return streamlit.session_state[cls.key()]
+
+    @classmethod
+    def set(cls, value: int) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_number_input_device_connnection_distance")

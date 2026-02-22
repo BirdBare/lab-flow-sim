@@ -1,9 +1,9 @@
 import streamlit
-from streamlit_flow import StreamlitFlowNode as _StreamlitFlowNode
 from streamlit_flow import StreamlitFlowState as _StreamlitFlowState
 
 from orm.device.models import Device as _Device
 from orm.workcell.models import AssignedDevice as _AssignedDevice
+from orm.workcell.models import DeviceConnection as _DeviceConnection
 from webapp.utils import SessionStateManager
 
 KEY_PREFIX = "WORKCELLS_LAYOUT_TAB_STATE"
@@ -37,23 +37,6 @@ class StreamlitFlowSelectedID(SessionStateManager.SessionStateItem[str | None]):
         return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_selected_id")
 
 
-class StreamlitFlowNodeDict(SessionStateManager.SessionStateItem[dict[str, _StreamlitFlowNode]]):
-    @classmethod
-    def get(cls) -> dict[str, _StreamlitFlowNode]:
-        if cls.key() not in streamlit.session_state:
-            cls.set({})
-
-        return streamlit.session_state[cls.key()]
-
-    @classmethod
-    def set(cls, value: dict[str, _StreamlitFlowNode]) -> None:
-        streamlit.session_state[cls.key()] = value
-
-    @classmethod
-    def key(cls) -> SessionStateManager.key:
-        return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_node_dict")
-
-
 class AssignedDeviceDict(SessionStateManager.SessionStateItem[dict[str, _AssignedDevice]]):
     @classmethod
     def get(cls) -> dict[str, _AssignedDevice]:
@@ -69,6 +52,23 @@ class AssignedDeviceDict(SessionStateManager.SessionStateItem[dict[str, _Assigne
     @classmethod
     def key(cls) -> SessionStateManager.key:
         return SessionStateManager.key(f"{KEY_PREFIX}_assigned_device_dict")
+
+
+class DeviceConnectionDict(SessionStateManager.SessionStateItem[dict[str, _DeviceConnection]]):
+    @classmethod
+    def get(cls) -> dict[str, _DeviceConnection]:
+        if cls.key() not in streamlit.session_state:
+            cls.set({})
+
+        return streamlit.session_state[cls.key()]
+
+    @classmethod
+    def set(cls, value: dict[str, _DeviceConnection]) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_device__connection_dict")
 
 
 class StreamlitFlowState(SessionStateManager.SessionStateItem[_StreamlitFlowState]):

@@ -31,17 +31,14 @@ def build_streamlit_flow_state(workcell: Workcell):
         )
 
         state.AssignedDeviceDict.get()[node.id] = assigned_device
-        state.StreamlitFlowNodeDict.get()[node.id] = node
 
         nodes.append(node)
 
-    for device_connection in DeviceConnection.objects.filter(assigned_devices__in=assigned_devices).distinct().all():
-        connected_devices = list(device_connection.assigned_devices.all())
-
-        device_1 = connected_devices[0]
+    for device_connection in []:
+        device_1 = device_connection.device_1
         db_node_1 = AssignedDeviceNode.objects.filter(assigned_device=device_1).get().node
 
-        device_2 = connected_devices[1]
+        device_2 = device_connection.device_2
         db_node_2 = AssignedDeviceNode.objects.filter(assigned_device=device_2).get().node
 
         edge = StreamlitFlowEdge(f"{db_node_1.id}-{db_node_2.id}", str(db_node_1.id), str(db_node_2.id))
@@ -113,7 +110,7 @@ def render(
         state.StreamlitFlowState.key(),
         state.StreamlitFlowSelectedID.key(),
         state.AssignedDeviceDict.key(),
-        state.StreamlitFlowNodeDict.key(),
+        state.DeviceConnectionDict.key(),
         state.SelectboxDevice.key(),
     )
 
@@ -167,6 +164,18 @@ def render(
                 "height": "auto",
             }
 
+    for edge in state.StreamlitFlowState.get().edges:
+        device_connection = state.DeviceConnectionDict.get()[edge.id]
+
+        edge.label = f"Distance: {device_connection.distance}"
+        edge.label_show_bg = True
+        edge.label_style = {"color": "black"}
+
+        if edge.id == state.StreamlitFlowSelectedID.get():
+            edge.style = {"stroke": "red"}
+        else:
+            edge.style = {"stroke": "white"}
+
     # Create the canvas
     if not workcell_labware_tab_state.DialogIsShown.get():
         state.StreamlitFlowState.set(
@@ -181,6 +190,22 @@ def render(
             ),
         )
 
+    # Capture new edges
+    for edge in state.StreamlitFlowState.get().edges:
+        if edge.id not in state.DeviceConnectionDict.get():
+            source_assigned_device = state.AssignedDeviceDict.get()[edge.source]
+            target_assigned_device = state.AssignedDeviceDict.get()[edge.target]
+
+            new_device_connection = DeviceConnection(
+                device_1=source_assigned_device,
+                device_2=target_assigned_device,
+                distance=0,
+            )
+
+            state.DeviceConnectionDict.get()[edge.id] = new_device_connection
+
+            state.StreamlitFlowState.get().selected_id = edge.id
+
     if state.IsEditable.get():
         if state.StreamlitFlowState.get().selected_id is not None:
             state.StreamlitFlowSelectedID.set(state.StreamlitFlowState.get().selected_id)
@@ -194,29 +219,35 @@ def render(
 
                 streamlit.button("Add Device", width=100, on_click=callback_button_add_device, args=(workcell,))
 
-            else:
-                if selected_id in state.AssignedDeviceDict.get():
-                    assigned_device = state.AssignedDeviceDict.get()[selected_id]
+            elif selected_id in state.AssignedDeviceDict.get():
+                assigned_device = state.AssignedDeviceDict.get()[selected_id]
 
-                    streamlit.title("Node Configuration")
+                streamlit.title("Node Configuration")
 
-                    devices = list(Device.objects.all())
+                devices = list(Device.objects.all())
 
-                    try:
-                        device_index = devices.index(assigned_device.device)
-                    except AssignedDevice.device.RelatedObjectDoesNotExist:
-                        device_index = None
+                try:
+                    device_index = devices.index(assigned_device.device)
+                except AssignedDevice.device.RelatedObjectDoesNotExist:
+                    device_index = None
 
-                    streamlit.selectbox(
-                        "Device",
-                        devices,
-                        index=device_index,
-                        format_func=lambda device: device.name,
-                        on_change=callback_button_set_assigned_device_device,
-                        key=state.SelectboxDevice.key(),
-                        args=(assigned_device,),
-                    )
+                streamlit.selectbox(
+                    "Device",
+                    devices,
+                    index=device_index,
+                    format_func=lambda device: device.name,
+                    on_change=callback_button_set_assigned_device_device,
+                    key=state.SelectboxDevice.key(),
+                    args=(assigned_device,),
+                )
 
                 with streamlit.container(horizontal=True, horizontal_alignment="center"):
                     streamlit.button("Deselect", width=100, on_click=callback_button_deselect)
                     streamlit.button("Delete", width=100, on_click=callback_button_delete)
+
+            elif selected_id in state.DeviceConnectionDict.get():
+                device_connection = state.DeviceConnectionDict.get()[selected_id]
+
+                streamlit.title("Edge Configuration")
+
+                streamlit.number_input("Distance", min_value=0, step=1)

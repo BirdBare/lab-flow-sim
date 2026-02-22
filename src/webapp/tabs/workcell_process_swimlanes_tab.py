@@ -72,7 +72,7 @@ def callback_button_delete_step(swimlane: Swimlane, step: FunctionStep | Process
 #
 # TAB
 #
-def render_tab(
+def render(
     session_state_manager: SessionStateManager,
     process: Process,
     is_editable: bool,

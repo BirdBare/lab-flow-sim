@@ -82,13 +82,13 @@ with SessionStateManager() as session_state_manager:
     )
 
     with workcell_labware:
-        workcell_labware_tab.render_tab(session_state_manager, workcell)
+        workcell_labware_tab.render(session_state_manager, workcell)
 
     with workcell_metadata:
-        workcell_metadata_tab.render_tab(session_state_manager, workcell)
+        workcell_metadata_tab.render(session_state_manager, workcell)
 
     with workcell_diagram:
-        workcell_layout_tab.render_tab(session_state_manager, workcell)
+        workcell_layout_tab.render(session_state_manager, workcell)
 
     with workcell_processes:
-        workcell_processes_tab.render_tab(session_state_manager, workcell)
+        workcell_processes_tab.render(session_state_manager, workcell)

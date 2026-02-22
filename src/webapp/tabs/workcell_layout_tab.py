@@ -104,7 +104,7 @@ def callback_button_delete():
 #
 # TAB
 #
-def render_tab(
+def render(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):

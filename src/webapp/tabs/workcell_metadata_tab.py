@@ -28,7 +28,7 @@ def callback_button_save_edits(workcell: Workcell):
 #
 # TAB
 #
-def render_tab(
+def render(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):

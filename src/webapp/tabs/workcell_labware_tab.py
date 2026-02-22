@@ -33,7 +33,7 @@ def edit_labware(labware: Labware):
 #
 # TAB
 #
-def render_tab(
+def render(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):

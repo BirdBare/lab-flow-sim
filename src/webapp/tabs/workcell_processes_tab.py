@@ -71,7 +71,7 @@ def callback_button_save_edits(process: Process):
 #
 # TAB
 #
-def render_tab(
+def render(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):
@@ -150,7 +150,7 @@ def render_tab(
         )
 
     with workcell_process_metadata:
-        workcell_process_metadata_tab.render_tab(
+        workcell_process_metadata_tab.render(
             session_state_manager,
             process,
             state.IsEditable.get(),
@@ -158,7 +158,7 @@ def render_tab(
         )
 
     with workcell_process_swimlanes:
-        workcell_process_swimlanes_tab.render_tab(
+        workcell_process_swimlanes_tab.render(
             session_state_manager,
             process,
             state.IsEditable.get(),

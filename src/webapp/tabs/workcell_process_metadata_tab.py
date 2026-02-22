@@ -8,7 +8,7 @@ from orm.workcell_process.models import Process
 #
 # TAB
 #
-def render_tab(
+def render(
     session_state_manager: SessionStateManager,
     process: Process,
     is_editable: bool,

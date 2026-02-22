@@ -91,9 +91,16 @@ def callback_button_deselect():
     state.StreamlitFlowSelectedID.set(None)
 
 
-def callback_button_delete():
+def callback_button_delete_node():
     state.StreamlitFlowState.get().nodes = [
         node for node in state.StreamlitFlowState.get().nodes if node.id != state.StreamlitFlowSelectedID.get()
+    ]
+    state.StreamlitFlowSelectedID.set(None)
+
+
+def callback_button_delete_edge():
+    state.StreamlitFlowState.get().edges = [
+        edge for edge in state.StreamlitFlowState.get().edges if edge.id != state.StreamlitFlowSelectedID.get()
     ]
     state.StreamlitFlowSelectedID.set(None)
 
@@ -107,6 +114,7 @@ def render(
 ):
     session_state_manager.add_persistent_keys(
         state.IsEditable.key(),
+        state.ForceUpdate.key(),
         state.StreamlitFlowState.key(),
         state.StreamlitFlowSelectedID.key(),
         state.AssignedDeviceDict.key(),
@@ -210,8 +218,12 @@ def render(
         if state.StreamlitFlowState.get().selected_id is not None:
             state.StreamlitFlowSelectedID.set(state.StreamlitFlowState.get().selected_id)
             state.StreamlitFlowState.get().selected_id = None  # type:ignore
+
+            state.ForceUpdate.set(True)
+
             streamlit.rerun()
 
+    if state.IsEditable.get():
         with streamlit.sidebar:
             selected_id = state.StreamlitFlowSelectedID.get()
             if selected_id is None:
@@ -227,9 +239,14 @@ def render(
                 devices = list(Device.objects.all())
 
                 try:
-                    device_index = devices.index(assigned_device.device)
+                    device = assigned_device.device
+                    device_index = devices.index(device)
                 except AssignedDevice.device.RelatedObjectDoesNotExist:
+                    device = None
                     device_index = None
+
+                if state.ForceUpdate.get():
+                    state.SelectboxDevice.set(device)
 
                 streamlit.selectbox(
                     "Device",
@@ -243,7 +260,7 @@ def render(
 
                 with streamlit.container(horizontal=True, horizontal_alignment="center"):
                     streamlit.button("Deselect", width=100, on_click=callback_button_deselect)
-                    streamlit.button("Delete", width=100, on_click=callback_button_delete)
+                    streamlit.button("Delete", width=100, on_click=callback_button_delete_node)
 
             elif selected_id in state.DeviceConnectionDict.get():
                 device_connection = state.DeviceConnectionDict.get()[selected_id]
@@ -251,3 +268,9 @@ def render(
                 streamlit.title("Edge Configuration")
 
                 streamlit.number_input("Distance", min_value=0, step=1)
+
+                with streamlit.container(horizontal=True, horizontal_alignment="center"):
+                    streamlit.button("Deselect", width=100, on_click=callback_button_deselect)
+                    streamlit.button("Delete", width=100, on_click=callback_button_delete_edge)
+
+    state.ForceUpdate.set(False)

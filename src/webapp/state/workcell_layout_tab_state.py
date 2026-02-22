@@ -23,6 +23,23 @@ class IsEditable(SessionStateManager.SessionStateItem[bool]):
         return SessionStateManager.key(f"{KEY_PREFIX}_is_editable")
 
 
+class StreamlitFlowState(SessionStateManager.SessionStateItem[_StreamlitFlowState]):
+    @classmethod
+    def get(cls) -> _StreamlitFlowState:
+        if cls.key() not in streamlit.session_state:
+            cls.set(_StreamlitFlowState([], []))
+
+        return streamlit.session_state[cls.key()]
+
+    @classmethod
+    def set(cls, value: _StreamlitFlowState) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_state")
+
+
 class StreamlitFlowSelectedID(SessionStateManager.SessionStateItem[str | None]):
     @classmethod
     def get(cls) -> str | None:
@@ -35,6 +52,20 @@ class StreamlitFlowSelectedID(SessionStateManager.SessionStateItem[str | None]):
     @classmethod
     def key(cls) -> SessionStateManager.key:
         return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_selected_id")
+
+
+class ForceUpdate(SessionStateManager.SessionStateItem[bool]):
+    @classmethod
+    def get(cls) -> bool:
+        return streamlit.session_state.get(cls.key(), False)
+
+    @classmethod
+    def set(cls, value: bool) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_force_update")
 
 
 class AssignedDeviceDict(SessionStateManager.SessionStateItem[dict[str, _AssignedDevice]]):
@@ -69,23 +100,6 @@ class DeviceConnectionDict(SessionStateManager.SessionStateItem[dict[str, _Devic
     @classmethod
     def key(cls) -> SessionStateManager.key:
         return SessionStateManager.key(f"{KEY_PREFIX}_device__connection_dict")
-
-
-class StreamlitFlowState(SessionStateManager.SessionStateItem[_StreamlitFlowState]):
-    @classmethod
-    def get(cls) -> _StreamlitFlowState:
-        if cls.key() not in streamlit.session_state:
-            cls.set(_StreamlitFlowState([], []))
-
-        return streamlit.session_state[cls.key()]
-
-    @classmethod
-    def set(cls, value: _StreamlitFlowState) -> None:
-        streamlit.session_state[cls.key()] = value
-
-    @classmethod
-    def key(cls) -> SessionStateManager.key:
-        return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_state")
 
 
 class SelectboxDevice(SessionStateManager.SessionStateItem[_Device | None]):

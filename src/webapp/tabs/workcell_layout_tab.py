@@ -89,7 +89,6 @@ def callback_selectbox_set_assigned_device_device(assigned_device: AssignedDevic
 
 def callback_number_input_set_device_connection_distance(device_connection: DeviceConnection):
     device_connection.distance = state.NumberInputDeviceConnectionDistance.get()
-    print("Set distance")
 
 
 def callback_button_deselect():
@@ -274,7 +273,6 @@ def render(
                 streamlit.title("Edge Configuration")
 
                 if state.ForceUpdate.get():
-                    print("FORCE")
                     state.NumberInputDeviceConnectionDistance.set(device_connection.distance)
 
                 streamlit.number_input(

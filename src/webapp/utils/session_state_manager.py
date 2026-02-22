@@ -11,6 +11,11 @@ class SessionStateManager:
     key = typing.NewType("key", str)
 
     class SessionStateItem[T]:
+        def __init__(self, *args: typing.Any, **kwargs: typing.Any) -> None:
+            raise TypeError(
+                f"{self.__class__.__name__} is a static session state accessor and cannot be instantiated.",
+            )
+
         @classmethod
         def get(cls, *args: typing.Any, **kwargs: typing.Any) -> T:
             raise NotImplementedError

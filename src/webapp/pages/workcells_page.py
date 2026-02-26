@@ -6,7 +6,7 @@ from utils import SessionStateManager, webapp_menu
 import webapp.state.workcells_page_state as state
 from orm.workcell.models import Workcell
 from webapp.state import workcell_layout_tab_state, workcell_metadata_tab_state, workcell_processes_tab_state
-from webapp.tabs import workcell_labware_tab, workcell_layout_tab, workcell_metadata_tab, workcell_processes_tab
+from webapp.tabs import workcell_layout_tab, workcell_metadata_tab, workcell_processes_tab
 
 
 #
@@ -77,12 +77,9 @@ with SessionStateManager() as session_state_manager:
 
     streamlit.session_state["workcell_error_container"] = streamlit.container()
 
-    workcell_metadata, workcell_diagram, workcell_labware, workcell_processes = streamlit.tabs(
-        ["Workcell Metadata", "Workcell Layout", "Workcell Labware", "Workcell Processes"],
+    workcell_metadata, workcell_diagram, workcell_processes = streamlit.tabs(
+        ["Workcell Metadata", "Workcell Layout", "Workcell Processes"],
     )
-
-    with workcell_labware:
-        workcell_labware_tab.render(session_state_manager, workcell)
 
     with workcell_metadata:
         workcell_metadata_tab.render(session_state_manager, workcell)

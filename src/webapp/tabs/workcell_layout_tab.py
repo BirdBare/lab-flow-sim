@@ -8,7 +8,6 @@ import webapp.state.workcell_layout_tab_state as state
 from orm.device.models import Device
 from orm.flow_diagram.models import AssignedDeviceNode
 from orm.workcell.models import AssignedDevice, DeviceConnection, Workcell
-from webapp.state import workcell_labware_tab_state
 
 
 def build_streamlit_flow_state(workcell: Workcell):
@@ -190,18 +189,17 @@ def render(
             edge.style = {"stroke": "white"}
 
     # Create the canvas
-    if not workcell_labware_tab_state.DialogIsShown.get():
-        state.StreamlitFlowState.set(
-            streamlit_flow(
-                "workcell_device_diagram",
-                state.StreamlitFlowState.get(),
-                allow_new_edges=state.IsEditable.get(),
-                get_node_on_click=state.IsEditable.get(),
-                get_edge_on_click=state.IsEditable.get(),
-                enable_pane_menu=state.IsEditable.get(),
-                hide_watermark=True,
-            ),
-        )
+    state.StreamlitFlowState.set(
+        streamlit_flow(
+            "workcell_device_diagram",
+            state.StreamlitFlowState.get(),
+            allow_new_edges=state.IsEditable.get(),
+            get_node_on_click=state.IsEditable.get(),
+            get_edge_on_click=state.IsEditable.get(),
+            enable_pane_menu=state.IsEditable.get(),
+            hide_watermark=True,
+        ),
+    )
 
     # Capture new edges
     for edge in state.StreamlitFlowState.get().edges:

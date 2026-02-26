@@ -159,7 +159,9 @@ def render(
                             if not is_editable or force_update:
                                 state.TextInputSwimlaneName.set(swimlane.name, swimlane)
 
-                            swimlane.name = streamlit.text_input("Name", key=state.TextInputSwimlaneName.key(swimlane))
+                            swimlane.name = streamlit.text_input(
+                                "Swimlane Name", key=state.TextInputSwimlaneName.key(swimlane)
+                            )
 
                             #
                             # Swimlane Move Right Button

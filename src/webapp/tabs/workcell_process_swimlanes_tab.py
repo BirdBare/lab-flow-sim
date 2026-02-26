@@ -160,7 +160,8 @@ def render(
                                 state.TextInputSwimlaneName.set(swimlane.name, swimlane)
 
                             swimlane.name = streamlit.text_input(
-                                "Swimlane Name", key=state.TextInputSwimlaneName.key(swimlane)
+                                "Swimlane Name",
+                                key=state.TextInputSwimlaneName.key(swimlane),
                             )
 
                             #
@@ -259,7 +260,7 @@ def render(
                                     step.function = streamlit.selectbox(
                                         "Device Function",
                                         sorted(
-                                            Function.objects.all(),
+                                            Function.objects.exclude(category="Spatial").all(),
                                             key=lambda x: f"{x.device.name}: {x.name}".lower(),
                                         ),
                                         key=state.SelectboxStepFunction.key(step),

@@ -3,6 +3,7 @@ import collections as _collections
 import streamlit
 
 from orm.device.models import Function as _Function
+from orm.workcell.models import Resource as _Resource
 from orm.workcell_process.models import FunctionStep as _FunctionStep
 from orm.workcell_process.models import Process as _Process
 from orm.workcell_process.models import ProcessStep as _ProcessStep
@@ -48,18 +49,18 @@ class SwimlaneStepsDict(
         return SessionStateManager.key(f"{KEY_PREFIX}_swimlane_steps_dict")
 
 
-class TextInputSwimlaneName(SessionStateManager.SessionStateItem[str]):
+class SelectboxSwimlaneResource(SessionStateManager.SessionStateItem[_Resource | None]):
     @classmethod
-    def get(cls, swimlane: _Swimlane) -> str:
+    def get(cls, swimlane: _Swimlane) -> _Resource | None:
         return streamlit.session_state[cls.key(swimlane)]
 
     @classmethod
-    def set(cls, value: str, swimlane: _Swimlane) -> None:
+    def set(cls, value: _Resource | None, swimlane: _Swimlane) -> None:
         streamlit.session_state[cls.key(swimlane)] = value
 
     @classmethod
     def key(cls, swimlane: _Swimlane) -> SessionStateManager.key:
-        return SessionStateManager.key(f"{KEY_PREFIX}_text_input_swimlane_{swimlane.id}_name")
+        return SessionStateManager.key(f"{KEY_PREFIX}_selectbox_swimlane_{swimlane.id}_resource")
 
 
 class TextInputSwimlaneMultiplier(SessionStateManager.SessionStateItem[str]):

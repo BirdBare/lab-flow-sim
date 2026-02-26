@@ -1,8 +1,8 @@
 from django.contrib import admin
 
-from .models import AssignedDevice, DeviceConnection, Labware, Workcell
+from .models import AssignedDevice, DeviceConnection, Resource, Workcell
 
 admin.site.register(Workcell)
 admin.site.register(AssignedDevice)
 admin.site.register(DeviceConnection)
-admin.site.register(Labware)
+admin.site.register(Resource)

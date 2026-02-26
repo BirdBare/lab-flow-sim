@@ -6,7 +6,7 @@ from utils import SessionStateManager
 
 import webapp.state.workcell_process_swimlanes_tab_state as state
 from orm.device.models import Function
-from orm.workcell.models import Labware
+from orm.workcell.models import Resource
 from orm.workcell_process.models import FunctionStep, Process, ProcessStep, StepIndex, Swimlane, SwimlaneIndex
 
 
@@ -15,13 +15,13 @@ from orm.workcell_process.models import FunctionStep, Process, ProcessStep, Step
 #
 def callback_button_add_swimlane(process: Process):
     # set both as none. Will be updated if process is saved.
-    swimlane = Swimlane(process=process, labware=None, multiplier_formula="")
+    swimlane = Swimlane(process=process, resource=None, multiplier_formula="")
 
     # add
     state.SwimlaneList.get().append(swimlane)
 
     # Set initial values for new swimlane
-    state.SelectboxSwimlaneLabware.set(None, swimlane)
+    state.SelectboxSwimlaneResource.set(None, swimlane)
     state.TextInputSwimlaneMultiplier.set("", swimlane)
 
 
@@ -155,16 +155,16 @@ def render(
                             # Swimlane Labware Selectbox
                             #
                             session_state_manager.add_persistent_keys(
-                                state.SelectboxSwimlaneLabware.key(swimlane),
+                                state.SelectboxSwimlaneResource.key(swimlane),
                             )
                             if not is_editable or force_update:
-                                state.SelectboxSwimlaneLabware.set(swimlane.labware, swimlane)
+                                state.SelectboxSwimlaneResource.set(swimlane.resource, swimlane)
 
-                            swimlane.labware = streamlit.selectbox(
+                            swimlane.resource = streamlit.selectbox(
                                 "Labware",
-                                Labware.objects.filter(workcell=process.workcell).order_by(Lower("name")).all(),
+                                Resource.objects.filter(workcell=process.workcell).order_by(Lower("name")).all(),
                                 format_func=lambda x: x.name,
-                                key=state.SelectboxSwimlaneLabware.key(swimlane),
+                                key=state.SelectboxSwimlaneResource.key(swimlane),
                                 disabled=not is_editable,
                             )
 

@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 
-from orm.workcell.models import Labware
+from orm.workcell.models import Resource
 
 from .process import Process
 
@@ -12,6 +12,6 @@ class Swimlane(models.Model):
 
     process = models.ForeignKey(to=Process, on_delete=models.CASCADE)
 
-    labware = models.ForeignKey(to=Labware, on_delete=models.CASCADE)
+    resource = models.ForeignKey(to=Resource, on_delete=models.CASCADE)
 
     multiplier_formula = models.CharField(max_length=255)

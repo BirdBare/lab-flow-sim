@@ -14,7 +14,7 @@ from webapp.tabs import workcell_labware_tab, workcell_layout_tab, workcell_meta
 #
 def callback_button_new_workcell():
     workcell = Workcell(
-        name=f"RENAME ME - New Process - {datetime.datetime.now().strftime('%d%m%Y:%H%M%S|%f')}",
+        name=f"RENAME ME - New Workcell - {datetime.datetime.now().strftime('%d%m%Y:%H%M%S|%f')}",
         comments="",
     )
     workcell.save()

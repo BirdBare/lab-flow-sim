@@ -3,7 +3,7 @@ from django.db.models.functions import Lower
 from utils import SessionStateManager
 
 from orm.workcell.models import Resource, Workcell
-from webapp.state import workcell_labware_tab_state as state
+from webapp.state import workcell_resource_tab_state as state
 
 
 @streamlit.dialog("Resource Editor", dismissible=False)

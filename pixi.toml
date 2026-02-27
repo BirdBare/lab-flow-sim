@@ -7,6 +7,15 @@ version = "0.1.0"
 preview = ["pixi-build"]
 
 [tasks]
+orm_delete = { cmd="python reset_db.py", cwd="src/orm"}
+
+orm_update = { cmd="python manage.py makemigrations", cwd="src/orm"}
+
+orm_upgrade = { cmd="python manage.py migrate", cwd="src/orm"}
+
+orm_reset = { depends-on=["orm_delete","orm_update","orm_upgrade"]}
+
+webapp = {cmd = "streamlit run home.py", cwd="src/webapp"}
 
 [dependencies]
 python = "3.13.*"

@@ -1,4 +1,6 @@
+#No specific version requirements. To upgrade all: pip install -U -r requirements.txt
+
 django
 streamlit
-streamlit-flow-component
+git+https://github.com/BirdBare/streamlit-flow
 simpy

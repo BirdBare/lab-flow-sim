@@ -162,7 +162,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-1.3.1-h8359307_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-ng-2.3.3-hed4e4f5_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
-      - pypi: git+https://github.com/BirdBare/streamlit-flow#751d62bb41df3ec67d9b79fff86d3d4673efa69a
+      - pypi: ../streamlit-flow
 packages:
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/_openmp_mutex-4.5-7_kmp_llvm.conda
   build_number: 7
@@ -2064,18 +2064,13 @@ packages:
   - pkg:pypi/streamlit?source=hash-mapping
   size: 7575911
   timestamp: 1770235703121
-- pypi: git+https://github.com/BirdBare/streamlit-flow#751d62bb41df3ec67d9b79fff86d3d4673efa69a
+- pypi: ../streamlit-flow
   name: streamlit-flow-component
   version: 1.6.1
+  sha256: 5c9ea1a175e730101eea15427497120934eaf2a451a70173ee9ec0c31afce124
   requires_dist:
   - streamlit>=1.0.0
-  - wheel ; extra == 'devel'
-  - pytest==7.4.0 ; extra == 'devel'
-  - playwright==1.39.0 ; extra == 'devel'
-  - requests==2.31.0 ; extra == 'devel'
-  - pytest-playwright-snapshot==1.0 ; extra == 'devel'
-  - pytest-rerunfailures==12.0 ; extra == 'devel'
-  requires_python: '>=3.8'
+  requires_python: '>=3.13'
 - conda: https://conda.anaconda.org/conda-forge/noarch/tenacity-9.1.4-pyhcf101f3_0.conda
   sha256: 32e75900d6a094ffe4290a8c9f1fa15744d9da8ff617aba4acaa0f057a065c34
   md5: 043f0599dc8aa023369deacdb5ac24eb

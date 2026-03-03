@@ -1,5 +1,5 @@
 import streamlit
-from streamlit_flow import StreamlitFlowState as _StreamlitFlowState
+from streamlit_flow import State as _StreamlitFlowState
 
 from orm.device.models import Device as _Device
 from orm.workcell.models import AssignedDevice as _AssignedDevice

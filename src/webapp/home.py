@@ -9,30 +9,84 @@ with SessionStateManager(SessionStateManager.key("static_flow_state")) as sessio
     pass
 
 import streamlit as st
-from streamlit_flow import streamlit_flow
-from streamlit_flow.elements import StreamlitFlowEdge, StreamlitFlowNode
-from streamlit_flow.state import StreamlitFlowState
+import streamlit_flow
 
-nodes = [
-    StreamlitFlowNode(
-        id="1", pos=(100, 100), data={"content": "Node 1"}, node_type="input", source_position="right", draggable=False
-    ),
-    StreamlitFlowNode("2", (350, 50), {"content": "Node 2"}, "default", "right", "left", draggable=False),
-    StreamlitFlowNode("3", (350, 150), {"content": "Node 3"}, "default", "right", "left", draggable=False),
-    StreamlitFlowNode("4", (600, 100), {"content": "Node 4"}, "output", target_position="left", draggable=False),
-]
+handle_right_source = streamlit_flow.Handle("right", is_target=False)
+handle_left_target = streamlit_flow.Handle("left", is_source=False)
+handle_right_source.add_valid_targets(handle_left_target)
+
+node_1 = streamlit_flow.MarkdownNode(
+    pos_x=100,
+    pos_y=100,
+    content="Node 1",
+    draggable=False,
+    handles=[handle_right_source],
+)
+
+node_2 = streamlit_flow.MarkdownNode(
+    pos_x=350,
+    pos_y=50,
+    content="Node 2",
+    draggable=False,
+    handles=[handle_right_source, handle_left_target],
+)
+node_3 = streamlit_flow.MarkdownNode(
+    pos_x=350,
+    pos_y=150,
+    content="Node 3",
+    draggable=False,
+    handles=[handle_right_source, handle_left_target],
+)
+node_4 = streamlit_flow.MarkdownNode(
+    pos_x=600,
+    pos_y=100,
+    content="Node 4",
+    draggable=False,
+    handles=[handle_left_target],
+)
+nodes: list[streamlit_flow.BaseNode] = [node_1, node_2, node_3, node_4]
+
+marker_arrow = streamlit_flow.Marker("arrow")
 
 edges = [
-    StreamlitFlowEdge("1-2", "1", "2", animated=True, marker_end={"type": "arrow"}),
-    StreamlitFlowEdge("1-3", "1", "3", animated=True, marker_end={"type": "arrow"}),
-    StreamlitFlowEdge("2-4", "2", "4", animated=True, marker_end={"type": "arrow"}),
-    StreamlitFlowEdge("3-4", "3", "4", animated=True, marker_end={"type": "arrow"}),
+    streamlit_flow.Edge(
+        node_1,
+        handle_right_source,
+        node_2,
+        handle_left_target,
+        animated=True,
+        marker_end=marker_arrow,
+    ),
+    streamlit_flow.Edge(
+        node_1,
+        handle_right_source,
+        node_3,
+        handle_left_target,
+        animated=True,
+        marker_end=marker_arrow,
+    ),
+    streamlit_flow.Edge(
+        node_2,
+        handle_right_source,
+        node_4,
+        handle_left_target,
+        animated=True,
+        marker_end=marker_arrow,
+    ),
+    streamlit_flow.Edge(
+        node_3,
+        handle_right_source,
+        node_4,
+        handle_left_target,
+        animated=True,
+        marker_end=marker_arrow,
+    ),
 ]
 
 if "static_flow_state" not in st.session_state:
-    st.session_state.static_flow_state = StreamlitFlowState(nodes, edges)
+    st.session_state.static_flow_state = streamlit_flow.State(nodes, edges)
 
-streamlit_flow(
+streamlit_flow.render(
     "static_flow",
     st.session_state.static_flow_state,
     fit_view=True,

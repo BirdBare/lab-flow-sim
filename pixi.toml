@@ -24,4 +24,4 @@ streamlit = ">=1.54.0,<2"
 simpy = ">=4.1.1,<5"
 
 [pypi-dependencies]
-streamlit-flow-component = { path = "../streamlit-flow"}
+streamlit-flow-component = { git = "https://github.com/BirdBare/streamlit-flow", branch = "v1.1" }

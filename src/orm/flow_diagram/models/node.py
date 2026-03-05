@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import uuid
 
 from django.db import models
+
+from .handle import Handle
 
 
 class Node(models.Model):
@@ -8,6 +12,8 @@ class Node(models.Model):
 
     x_pos = models.PositiveIntegerField()
     y_pos = models.PositiveIntegerField()
+
+    handles: models.ManyToManyField[Handle, Node] = models.ManyToManyField(to=Handle)
 
     def __str__(self):
         return f"x_pos={self.x_pos} y_pos={self.y_pos}"

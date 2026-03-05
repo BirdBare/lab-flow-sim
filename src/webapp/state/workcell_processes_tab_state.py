@@ -34,7 +34,7 @@ class ForceUpdate(SessionStateManager.SessionStateItem[bool]):
         return SessionStateManager.key(f"{KEY_PREFIX}_force_update")
 
 
-class ProcessList(SessionStateManager.SessionStateItem[list[_Process]]):
+class Processes(SessionStateManager.SessionStateItem[list[_Process]]):
     @classmethod
     def get(cls) -> list[_Process]:
         if cls.key() not in streamlit.session_state:

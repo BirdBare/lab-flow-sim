@@ -68,7 +68,7 @@ class ForceUpdate(SessionStateManager.SessionStateItem[bool]):
         return SessionStateManager.key(f"{KEY_PREFIX}_force_update")
 
 
-class AssignedDeviceDict(SessionStateManager.SessionStateItem[dict[str, _AssignedDevice]]):
+class AssignedDeviceByNodeID(SessionStateManager.SessionStateItem[dict[str, _AssignedDevice]]):
     @classmethod
     def get(cls) -> dict[str, _AssignedDevice]:
         if cls.key() not in streamlit.session_state:
@@ -85,7 +85,7 @@ class AssignedDeviceDict(SessionStateManager.SessionStateItem[dict[str, _Assigne
         return SessionStateManager.key(f"{KEY_PREFIX}_assigned_device_dict")
 
 
-class DeviceConnectionDict(SessionStateManager.SessionStateItem[dict[str, _DeviceConnection]]):
+class DeviceConnectionByEdgeID(SessionStateManager.SessionStateItem[dict[str, _DeviceConnection]]):
     @classmethod
     def get(cls) -> dict[str, _DeviceConnection]:
         if cls.key() not in streamlit.session_state:

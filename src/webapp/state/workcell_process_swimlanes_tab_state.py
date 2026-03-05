@@ -13,7 +13,7 @@ from webapp.utils import SessionStateManager
 KEY_PREFIX = "workcell_process_swimlanes"
 
 
-class SwimlaneList(SessionStateManager.SessionStateItem[list[_Swimlane]]):
+class Swimlanes(SessionStateManager.SessionStateItem[list[_Swimlane]]):
     @classmethod
     def get(cls) -> list[_Swimlane]:
         if cls.key() not in streamlit.session_state:
@@ -30,7 +30,7 @@ class SwimlaneList(SessionStateManager.SessionStateItem[list[_Swimlane]]):
         return SessionStateManager.key(f"{KEY_PREFIX}_swimlane_list")
 
 
-class SwimlaneStepsDict(
+class SwimlaneStepsBySwimlane(
     SessionStateManager.SessionStateItem[_collections.defaultdict[_Swimlane, list[_FunctionStep | _ProcessStep]]],
 ):
     @classmethod

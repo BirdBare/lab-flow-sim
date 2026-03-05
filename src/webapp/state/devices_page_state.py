@@ -34,7 +34,7 @@ class TextInputDeviceComments(SessionStateManager.SessionStateItem[str]):
         return SessionStateManager.key(f"{KEY_PREFIX}_text_input_device_function_{function.id}_comments")
 
 
-class DeviceFunctionList(SessionStateManager.SessionStateItem[list[_Function]]):
+class DeviceFunctions(SessionStateManager.SessionStateItem[list[_Function]]):
     @classmethod
     def get(cls) -> list[_Function]:
         if cls.key() not in streamlit.session_state:

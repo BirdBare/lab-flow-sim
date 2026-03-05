@@ -18,7 +18,7 @@ def callback_button_add_swimlane(process: Process):
     swimlane = Swimlane(process=process, resource=None, multiplier_formula="1")
 
     # add
-    state.SwimlaneList.get().append(swimlane)
+    state.Swimlanes.get().append(swimlane)
 
     # Set initial values for new swimlane
     state.SelectboxSwimlaneResource.set(None, swimlane)
@@ -26,31 +26,31 @@ def callback_button_add_swimlane(process: Process):
 
 
 def callback_button_move_swimlane_left(swimlane: Swimlane):
-    index = state.SwimlaneList.get().index(swimlane)
+    index = state.Swimlanes.get().index(swimlane)
 
-    state.SwimlaneList.get().remove(swimlane)
+    state.Swimlanes.get().remove(swimlane)
 
     # When moving left the insert position can suddenly be less than zero.
-    state.SwimlaneList.get().insert(max(index - 1, 0), swimlane)
+    state.Swimlanes.get().insert(max(index - 1, 0), swimlane)
 
 
 def callback_button_move_swimlane_right(swimlane: Swimlane):
-    index = state.SwimlaneList.get().index(swimlane)
+    index = state.Swimlanes.get().index(swimlane)
 
-    state.SwimlaneList.get().remove(swimlane)
+    state.Swimlanes.get().remove(swimlane)
 
-    state.SwimlaneList.get().insert(index + 1, swimlane)
+    state.Swimlanes.get().insert(index + 1, swimlane)
 
 
 def callback_button_delete_swimlane(swimlane: Swimlane):
-    state.SwimlaneList.get().remove(swimlane)
-    del state.SwimlaneStepsDict.get()[swimlane]
+    state.Swimlanes.get().remove(swimlane)
+    del state.SwimlaneStepsBySwimlane.get()[swimlane]
 
 
 def callback_button_swimlane_add_function_step(swimlane: Swimlane, insert_index: int):
     step = FunctionStep(swimlane=swimlane, function=None, parallelization_key="")
 
-    state.SwimlaneStepsDict.get()[swimlane].insert(insert_index, step)
+    state.SwimlaneStepsBySwimlane.get()[swimlane].insert(insert_index, step)
 
     state.SelectboxStepFunction.set(None, step)
     state.SelectboxStepParallelization.set(None, step)
@@ -59,14 +59,14 @@ def callback_button_swimlane_add_function_step(swimlane: Swimlane, insert_index:
 def callback_button_swimlane_add_process_step(swimlane: Swimlane, insert_index: int):
     step = ProcessStep(swimlane=swimlane, process=None, connected_swimlane=None)
 
-    state.SwimlaneStepsDict.get()[swimlane].insert(insert_index, step)
+    state.SwimlaneStepsBySwimlane.get()[swimlane].insert(insert_index, step)
 
     state.SelectboxStepProcess.set(None, step)
     state.SelectboxStepSwimlane.set(None, step)
 
 
 def callback_button_delete_step(swimlane: Swimlane, step: FunctionStep | ProcessStep):
-    state.SwimlaneStepsDict.get()[swimlane].remove(step)
+    state.SwimlaneStepsBySwimlane.get()[swimlane].remove(step)
 
 
 #
@@ -87,29 +87,29 @@ def render(
                 args=(process,),
             )
 
-    session_state_manager.add_persistent_keys(state.SwimlaneList.key())
-    session_state_manager.add_persistent_keys(state.SwimlaneStepsDict.key())
+    session_state_manager.add_persistent_keys(state.Swimlanes.key())
+    session_state_manager.add_persistent_keys(state.SwimlaneStepsBySwimlane.key())
     if not is_editable or force_update:
-        state.SwimlaneList.set([])
-        state.SwimlaneStepsDict.set(collections.defaultdict(list))
+        state.Swimlanes.set([])
+        state.SwimlaneStepsBySwimlane.set(collections.defaultdict(list))
 
         for swimlane_index in SwimlaneIndex.objects.filter(swimlane__process=process).order_by("index").all():
             swimlane = swimlane_index.swimlane
-            state.SwimlaneList.get().append(swimlane)
+            state.Swimlanes.get().append(swimlane)
 
             for step_index in StepIndex.objects.filter(base_step__swimlane=swimlane).order_by("index").all():
                 step = step_index.base_step.cast()
 
-                state.SwimlaneStepsDict.get()[swimlane].append(step)
+                state.SwimlaneStepsBySwimlane.get()[swimlane].append(step)
 
     global_parallelization_keys = {
         step.parallelization_key
-        for steps in state.SwimlaneStepsDict.get().values()
+        for steps in state.SwimlaneStepsBySwimlane.get().values()
         for step in steps
         if isinstance(step, FunctionStep) and step.parallelization_key is not None and step.parallelization_key != ""
     }
 
-    swimlanes = state.SwimlaneList.get()
+    swimlanes = state.Swimlanes.get()
 
     swimlane_chunks = [swimlanes[i : i + 3] for i in range(0, len(swimlanes), 3)]
 
@@ -125,7 +125,7 @@ def render(
             for swimlane_index, swimlane in enumerate(swimlane_chunk):
                 swimlane_parallelization_keys = {
                     step.parallelization_key
-                    for step in state.SwimlaneStepsDict.get()[swimlane]
+                    for step in state.SwimlaneStepsBySwimlane.get()[swimlane]
                     if isinstance(step, FunctionStep)
                     and step.parallelization_key is not None
                     and step.parallelization_key != ""
@@ -245,7 +245,7 @@ def render(
                     #
                     # Render Steps
                     #
-                    for step_index, step in enumerate(state.SwimlaneStepsDict.get()[swimlane]):
+                    for step_index, step in enumerate(state.SwimlaneStepsBySwimlane.get()[swimlane]):
                         with streamlit.container(border=True, gap=None):
                             with streamlit.container():
                                 #

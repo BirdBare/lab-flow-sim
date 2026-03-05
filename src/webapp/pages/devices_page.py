@@ -14,7 +14,7 @@ webapp_menu()
 # CALLBACKS
 #
 def callback_button_edit_device_delete_function(index: int):
-    state.DeviceFunctionList.get().pop(index)
+    state.DeviceFunctions.get().pop(index)
 
 
 @streamlit.dialog("Device Editor", dismissible=False)
@@ -31,12 +31,12 @@ def edit_device(device: Device):
 
         with streamlit.container(horizontal_alignment="center"):
             if streamlit.button("Add Function"):
-                state.DeviceFunctionList.get().insert(
+                state.DeviceFunctions.get().insert(
                     0,
                     Function(device=device, name="New Function", category="Material", execution_time_formula="0"),
                 )
 
-    for index, function in enumerate(state.DeviceFunctionList.get()):
+    for index, function in enumerate(state.DeviceFunctions.get()):
         with streamlit.expander(function.name):
             #
             # Function name
@@ -98,17 +98,17 @@ def edit_device(device: Device):
             device.save()
 
             for function in Function.objects.filter(device=device).all():
-                if function not in state.DeviceFunctionList.get():
+                if function not in state.DeviceFunctions.get():
                     function.delete()
 
-            for function in state.DeviceFunctionList.get():
+            for function in state.DeviceFunctions.get():
                 function.save()
 
             streamlit.rerun()
 
 
 with SessionStateManager() as session_state_manager:
-    session_state_manager.add_persistent_keys(state.DeviceFunctionList.key())
+    session_state_manager.add_persistent_keys(state.DeviceFunctions.key())
 
     streamlit.title("Devices")
 
@@ -122,7 +122,7 @@ with SessionStateManager() as session_state_manager:
     with streamlit.container(gap=None, horizontal_alignment="center"):
         streamlit.divider()
         if streamlit.button("New Device", key=f"{state.KEY_PREFIX}_button_new_device"):
-            state.DeviceFunctionList.set([])
+            state.DeviceFunctions.set([])
             edit_device(Device(name="New Device"))
 
     devices = list(Device.objects.filter(name__icontains=device_search_value).order_by(Lower("name")).all())
@@ -144,7 +144,7 @@ with SessionStateManager() as session_state_manager:
                             type="tertiary",
                             key=f"{state.KEY_PREFIX}_button_device_{device.id}_edit",
                         ):
-                            state.DeviceFunctionList.set(
+                            state.DeviceFunctions.set(
                                 list(
                                     Function.objects.filter(device=device).order_by(Lower("name")).all(),
                                 ),

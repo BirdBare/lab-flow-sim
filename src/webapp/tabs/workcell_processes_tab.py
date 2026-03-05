@@ -21,7 +21,7 @@ def callback_button_new_process(workcell=Workcell):
         comments="",
     )
 
-    state.ProcessList.get().append(process)
+    state.Processes.get().append(process)
     state.SelectboxProcess.set(process)
 
     state.IsEditable.set(True)
@@ -46,17 +46,17 @@ def callback_button_save_edits(process: Process):
     state.SelectboxProcess.set(process)
 
     for swimlane in Swimlane.objects.filter(process=process).all():
-        if swimlane not in workcell_process_swimlanes_tab_state.SwimlaneList.get():
+        if swimlane not in workcell_process_swimlanes_tab_state.Swimlanes.get():
             swimlane.delete()
 
-    for swimlane_index, swimlane in enumerate(workcell_process_swimlanes_tab_state.SwimlaneList.get()):
+    for swimlane_index, swimlane in enumerate(workcell_process_swimlanes_tab_state.Swimlanes.get()):
         swimlane.save()
 
         SwimlaneIndex.objects.filter(swimlane=swimlane).delete()
 
         SwimlaneIndex(swimlane=swimlane, index=swimlane_index).save()
 
-    for swimlane, steps in workcell_process_swimlanes_tab_state.SwimlaneStepsDict.get().items():
+    for swimlane, steps in workcell_process_swimlanes_tab_state.SwimlaneStepsBySwimlane.get().items():
         # I can delete all the previous steps in the swimlane and rebuild. Is faster and easier to read.
         BaseStep.objects.filter(swimlane=swimlane).delete()
 
@@ -77,19 +77,19 @@ def render(
 ):
     session_state_manager.add_persistent_keys(state.IsEditable.key(), state.ForceUpdate.key())
 
-    session_state_manager.add_persistent_keys(state.ProcessList.key())
+    session_state_manager.add_persistent_keys(state.Processes.key())
     if not state.IsEditable.get():
         # Reset the state
-        state.ProcessList.set([])
+        state.Processes.set([])
 
         for process in Process.objects.filter(workcell=workcell).order_by(Lower("name")).all():
-            state.ProcessList.get().append(process)
+            state.Processes.get().append(process)
 
     with streamlit.container(horizontal=True, vertical_alignment="bottom"):
         session_state_manager.add_persistent_keys(state.SelectboxProcess.key())
         process = streamlit.selectbox(
             "Select A Process",
-            state.ProcessList.get(),
+            state.Processes.get(),
             key=state.SelectboxProcess.key(),
             disabled=state.IsEditable.get(),
             format_func=lambda x: x.name,

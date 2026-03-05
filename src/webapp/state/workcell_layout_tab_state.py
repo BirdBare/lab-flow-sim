@@ -1,4 +1,6 @@
 import streamlit
+from streamlit_flow import BaseNode as _BaseNode
+from streamlit_flow import Edge as _Edge
 from streamlit_flow import State as _StreamlitFlowState
 
 from orm.device.models import Device as _Device
@@ -40,18 +42,18 @@ class StreamlitFlowState(SessionStateManager.SessionStateItem[_StreamlitFlowStat
         return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_state")
 
 
-class StreamlitFlowSelectedID(SessionStateManager.SessionStateItem[str | None]):
+class StreamlitFlowSelected(SessionStateManager.SessionStateItem[_BaseNode | _Edge | None]):
     @classmethod
-    def get(cls) -> str | None:
+    def get(cls) -> _BaseNode | _Edge | None:
         return streamlit.session_state.get(cls.key(), None)
 
     @classmethod
-    def set(cls, value: str | None) -> None:
+    def set(cls, value: _BaseNode | _Edge | None) -> None:
         streamlit.session_state[cls.key()] = value
 
     @classmethod
     def key(cls) -> SessionStateManager.key:
-        return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_selected_id")
+        return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_selected")
 
 
 class ForceUpdate(SessionStateManager.SessionStateItem[bool]):

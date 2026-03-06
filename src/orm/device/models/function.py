@@ -12,11 +12,6 @@ class Function(models.Model):
 
     name = models.CharField(max_length=255)
 
-    category = models.CharField(
-        max_length=255,
-        choices=(("Spatial", "Spatial"), ("Material", "Material"), ("Informational", "Informational")),
-    )
-
     execution_time_formula = models.CharField(max_length=255)
 
     comments = models.TextField()

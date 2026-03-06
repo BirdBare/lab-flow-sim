@@ -27,13 +27,25 @@ def edit_device(device: Device):
             key=f"{state.KEY_PREFIX}_device_editor_text_input_device_name",
         )
 
+        #
+        # Function Category
+        #
+        options = ["Material", "Spatial"]
+        device.category = streamlit.selectbox(
+            "Device Category",
+            options,
+            index=options.index(device.category),
+            key=f"{state.KEY_PREFIX}_device_editor_selectbox_device_{device.id}_categorization",
+            label_visibility="visible",
+        )
+
         streamlit.divider()
 
         with streamlit.container(horizontal_alignment="center"):
             if streamlit.button("Add Function"):
                 state.DeviceFunctions.get().insert(
                     0,
-                    Function(device=device, name="New Function", category="Material", execution_time_formula="0"),
+                    Function(device=device, name="New Function", execution_time_formula="0"),
                 )
 
     for index, function in enumerate(state.DeviceFunctions.get()):
@@ -45,16 +57,6 @@ def edit_device(device: Device):
                 "Function Name",
                 value=function.name,
                 key=f"{state.KEY_PREFIX}_device_editor_text_input_function_{function.id}_name",
-            )
-
-            #
-            # Function Category
-            #
-            function.category = streamlit.selectbox(
-                "Functional Category",
-                ["Material", "Spatial"],
-                key=f"{state.KEY_PREFIX}_device_editor_text_input_function_{function.id}_categorization",
-                label_visibility="visible",
             )
 
             #
@@ -123,7 +125,7 @@ with SessionStateManager() as session_state_manager:
         streamlit.divider()
         if streamlit.button("New Device", key=f"{state.KEY_PREFIX}_button_new_device"):
             state.DeviceFunctions.set([])
-            edit_device(Device(name="New Device"))
+            edit_device(Device(name="New Device", category="Material"))
 
     devices = list(Device.objects.filter(name__icontains=device_search_value).order_by(Lower("name")).all())
     device_chunks = [devices[i : i + 3] for i in range(0, len(devices), 3)]
@@ -151,20 +153,15 @@ with SessionStateManager() as session_state_manager:
                             )
                             edit_device(device)
 
+                        #
+                        # device category
+                        #
+                        streamlit.selectbox("Device Category", [device.category], disabled=True)
+
                         streamlit.divider()
 
                     for function in Function.objects.filter(device=device).order_by(Lower("name")).all():
                         with streamlit.expander(function.name):
-                            #
-                            # Category
-                            #
-                            streamlit.selectbox(
-                                "Functional Category",
-                                [function.category],
-                                key=f"{state.KEY_PREFIX}_text_input device_function_{function.id}_categorization",
-                                disabled=True,
-                            )
-
                             #
                             # Execution Time
                             #

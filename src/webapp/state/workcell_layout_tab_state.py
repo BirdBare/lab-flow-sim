@@ -1,7 +1,10 @@
+import collections
+import typing
+import uuid
+
 import streamlit
-from streamlit_flow import BaseNode as _BaseNode
-from streamlit_flow import Edge as _Edge
-from streamlit_flow import State as _StreamlitFlowState
+from streamlit_flow import Diagram as _StreamlitFlowDiagram
+from streamlit_flow import Handle as _Handle
 
 from orm.device.models import Device as _Device
 from orm.workcell.models import AssignedDevice as _AssignedDevice
@@ -25,16 +28,51 @@ class IsEditable(SessionStateManager.SessionStateItem[bool]):
         return SessionStateManager.key(f"{KEY_PREFIX}_is_editable")
 
 
-class StreamlitFlowState(SessionStateManager.SessionStateItem[_StreamlitFlowState]):
+class HandleByDeviceCategoryByPosition(
+    SessionStateManager.SessionStateItem[
+        collections.defaultdict[
+            typing.Literal["Material", "Spatial"],
+            dict[typing.Literal["top", "bottom", "left", "right"], _Handle],
+        ]
+    ],
+):
     @classmethod
-    def get(cls) -> _StreamlitFlowState:
+    def get(
+        cls,
+    ) -> collections.defaultdict[
+        typing.Literal["Material", "Spatial"],
+        dict[typing.Literal["top", "bottom", "left", "right"], _Handle],
+    ]:
         if cls.key() not in streamlit.session_state:
-            cls.set(_StreamlitFlowState([], []))
+            cls.set(collections.defaultdict(dict))
 
         return streamlit.session_state[cls.key()]
 
     @classmethod
-    def set(cls, value: _StreamlitFlowState) -> None:
+    def set(
+        cls,
+        value: collections.defaultdict[
+            typing.Literal["Material", "Spatial"],
+            dict[typing.Literal["top", "bottom", "left", "right"], _Handle],
+        ],
+    ) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_handle_by_device_category_by_position")
+
+
+class StreamlitFlowDiagram(SessionStateManager.SessionStateItem[_StreamlitFlowDiagram]):
+    @classmethod
+    def get(cls) -> _StreamlitFlowDiagram:
+        if cls.key() not in streamlit.session_state:
+            cls.set(_StreamlitFlowDiagram([], [], [], []))
+
+        return streamlit.session_state[cls.key()]
+
+    @classmethod
+    def set(cls, value: _StreamlitFlowDiagram) -> None:
         streamlit.session_state[cls.key()] = value
 
     @classmethod
@@ -42,18 +80,18 @@ class StreamlitFlowState(SessionStateManager.SessionStateItem[_StreamlitFlowStat
         return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_state")
 
 
-class StreamlitFlowSelected(SessionStateManager.SessionStateItem[_BaseNode | _Edge | None]):
+class StreamlitFlowSelectedID(SessionStateManager.SessionStateItem[uuid.UUID | None]):
     @classmethod
-    def get(cls) -> _BaseNode | _Edge | None:
+    def get(cls) -> uuid.UUID | None:
         return streamlit.session_state.get(cls.key(), None)
 
     @classmethod
-    def set(cls, value: _BaseNode | _Edge | None) -> None:
+    def set(cls, value: uuid.UUID | None) -> None:
         streamlit.session_state[cls.key()] = value
 
     @classmethod
     def key(cls) -> SessionStateManager.key:
-        return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_selected")
+        return SessionStateManager.key(f"{KEY_PREFIX}_streamlit_flow_selected_id")
 
 
 class ForceUpdate(SessionStateManager.SessionStateItem[bool]):
@@ -70,38 +108,38 @@ class ForceUpdate(SessionStateManager.SessionStateItem[bool]):
         return SessionStateManager.key(f"{KEY_PREFIX}_force_update")
 
 
-class AssignedDeviceByNodeID(SessionStateManager.SessionStateItem[dict[str, _AssignedDevice]]):
+class AssignedDeviceByNodeID(SessionStateManager.SessionStateItem[dict[uuid.UUID, _AssignedDevice]]):
     @classmethod
-    def get(cls) -> dict[str, _AssignedDevice]:
+    def get(cls) -> dict[uuid.UUID, _AssignedDevice]:
         if cls.key() not in streamlit.session_state:
             cls.set({})
 
         return streamlit.session_state[cls.key()]
 
     @classmethod
-    def set(cls, value: dict[str, _AssignedDevice]) -> None:
+    def set(cls, value: dict[uuid.UUID, _AssignedDevice]) -> None:
         streamlit.session_state[cls.key()] = value
 
     @classmethod
     def key(cls) -> SessionStateManager.key:
-        return SessionStateManager.key(f"{KEY_PREFIX}_assigned_device_dict")
+        return SessionStateManager.key(f"{KEY_PREFIX}_assigned_device_by_node_id")
 
 
-class DeviceConnectionByEdgeID(SessionStateManager.SessionStateItem[dict[str, _DeviceConnection]]):
+class DeviceConnectionByEdgeID(SessionStateManager.SessionStateItem[dict[uuid.UUID, _DeviceConnection]]):
     @classmethod
-    def get(cls) -> dict[str, _DeviceConnection]:
+    def get(cls) -> dict[uuid.UUID, _DeviceConnection]:
         if cls.key() not in streamlit.session_state:
             cls.set({})
 
         return streamlit.session_state[cls.key()]
 
     @classmethod
-    def set(cls, value: dict[str, _DeviceConnection]) -> None:
+    def set(cls, value: dict[uuid.UUID, _DeviceConnection]) -> None:
         streamlit.session_state[cls.key()] = value
 
     @classmethod
     def key(cls) -> SessionStateManager.key:
-        return SessionStateManager.key(f"{KEY_PREFIX}_device__connection_dict")
+        return SessionStateManager.key(f"{KEY_PREFIX}_device_connection_by_edge_id")
 
 
 class SelectboxAssignedDeviceDevice(SessionStateManager.SessionStateItem[_Device | None]):

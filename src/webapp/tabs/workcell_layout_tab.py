@@ -12,9 +12,36 @@ from orm.workcell.models import AssignedDevice, DeviceConnection, Workcell
 
 
 def build_streamlit_flow_state(workcell: Workcell):
-    state.StreamlitFlowSelected.set(None)
+    print("build")
+    state.StreamlitFlowSelectedID.set(None)
 
-    handle_by_db_id: dict[uuid.UUID, streamlit_flow.Handle] = {}
+    #
+    # build handles. These are pretty simple for the workcell layout:
+    #
+    # 1 set of 4 handles for material devices. Valid targets are the handles for the spatial devices
+    # 1 set of 4 handles for spatial devices. Valid targets are material devices
+    #
+    for category in ("Material", "Spatial"):
+        for position in ("top", "bottom", "left", "right"):
+            state.HandleByDeviceCategoryByPosition.get()[category][position] = streamlit_flow.Handle(position)
+
+    material_handles: list[streamlit_flow.Handle] = list(
+        state.HandleByDeviceCategoryByPosition.get()["Material"].values(),
+    )
+    spatial_handles: list[streamlit_flow.Handle] = list(
+        state.HandleByDeviceCategoryByPosition.get()["Spatial"].values(),
+    )
+    for source_handles, target_handles in [(material_handles, spatial_handles), (spatial_handles, material_handles)]:
+        for source_handle in source_handles:
+            source_handle.add_valid_targets(*[target_handle.id for target_handle in target_handles])
+
+    state.StreamlitFlowDiagram.get().handles = material_handles + spatial_handles
+
+    state.StreamlitFlowDiagram.get().nodes = []
+    state.StreamlitFlowDiagram.get().edges = []
+
+    return
+
     node_by_db_id: dict[uuid.UUID, streamlit_flow.BaseNode] = {}
     edge_by_db_id: dict[uuid.UUID, streamlit_flow.Edge] = {}
 
@@ -33,12 +60,13 @@ def build_streamlit_flow_state(workcell: Workcell):
 
         # handles for node
         for db_handle in db_node.handles.all():
-            if db_handle.id in handle_by_db_id:
-                handle = handle_by_db_id[db_handle.id]
+            db_handle_id = str(db_handle.id)
+            if db_handle.id in state.HandleByID.get():
+                handle = state.HandleByID.get()[db_handle_id]
 
             else:
-                handle = handle_by_db_id[db_handle.id] = streamlit_flow.Handle(
-                    typing.cast("typing.Literal['top', 'bottom', 'left', 'right']", db_handle.position),
+                handle = state.HandleByID.get()[db_handle_id] = streamlit_flow.Handle(
+                    typing.cast('typing.Literal["top", "bottom", "left", "right"]', db_handle.position),
                     is_source=db_handle.is_source,
                     is_target=db_handle.is_target,
                 )
@@ -70,14 +98,34 @@ def callback_button_save_edits(workcell: Workcell):
     state.IsEditable.set(False)
 
 
-def callback_button_add_device(workcell: Workcell):
+def callback_button_add_material_device(workcell: Workcell):
     new_assigned_device = AssignedDevice(workcell=workcell, device=None)
-    new_node = streamlit_flow.MarkdownNode(0, 0, "")
+    new_node = streamlit_flow.MarkdownNode(
+        0,
+        0,
+        "",
+        handle_ids={handle.id for handle in state.HandleByDeviceCategoryByPosition.get()["Material"].values()},
+    )
 
     state.AssignedDeviceByNodeID.get()[new_node.id] = new_assigned_device
-    state.StreamlitFlowState.get().nodes.append(new_node)
+    state.StreamlitFlowDiagram.get().nodes.append(new_node)
 
-    state.StreamlitFlowSelected.set(new_node)
+    state.StreamlitFlowSelectedID.set(new_node.id)
+
+
+def callback_button_add_spatial_device(workcell: Workcell):
+    new_assigned_device = AssignedDevice(workcell=workcell, device=None)
+    new_node = streamlit_flow.MarkdownNode(
+        0,
+        0,
+        "",
+        handle_ids={handle.id for handle in state.HandleByDeviceCategoryByPosition.get()["Spatial"].values()},
+    )
+
+    state.AssignedDeviceByNodeID.get()[new_node.id] = new_assigned_device
+    state.StreamlitFlowDiagram.get().nodes.append(new_node)
+
+    state.StreamlitFlowSelectedID.set(new_node.id)
 
 
 def callback_selectbox_set_assigned_device_device(assigned_device: AssignedDevice):
@@ -93,21 +141,21 @@ def callback_number_input_set_device_connection_distance(device_connection: Devi
 
 
 def callback_button_deselect():
-    state.StreamlitFlowSelected.set(None)
+    state.StreamlitFlowSelectedID.set(None)
 
 
 def callback_button_delete_node():
-    state.StreamlitFlowState.get().nodes = [
-        node for node in state.StreamlitFlowState.get().nodes if node != state.StreamlitFlowSelected.get()
+    state.StreamlitFlowDiagram.get().nodes = [
+        node for node in state.StreamlitFlowDiagram.get().nodes if node.id != state.StreamlitFlowSelectedID.get()
     ]
-    state.StreamlitFlowSelected.set(None)
+    state.StreamlitFlowSelectedID.set(None)
 
 
 def callback_button_delete_edge():
-    state.StreamlitFlowState.get().edges = [
-        edge for edge in state.StreamlitFlowState.get().edges if edge != state.StreamlitFlowSelected.get()
+    state.StreamlitFlowDiagram.get().edges = [
+        edge for edge in state.StreamlitFlowDiagram.get().edges if edge.id != state.StreamlitFlowSelectedID.get()
     ]
-    state.StreamlitFlowSelected.set(None)
+    state.StreamlitFlowSelectedID.set(None)
 
 
 #
@@ -117,11 +165,13 @@ def render(
     session_state_manager: SessionStateManager,
     workcell: Workcell,
 ):
+
     session_state_manager.add_persistent_keys(
         state.IsEditable.key(),
         state.ForceUpdate.key(),
-        state.StreamlitFlowState.key(),
-        state.StreamlitFlowSelected.key(),
+        state.HandleByDeviceCategoryByPosition.key(),
+        state.StreamlitFlowDiagram.key(),
+        state.StreamlitFlowSelectedID.key(),
         state.AssignedDeviceByNodeID.key(),
         state.DeviceConnectionByEdgeID.key(),
         state.SelectboxAssignedDeviceDevice.key(),
@@ -156,7 +206,7 @@ def render(
                 width=120,
             )
 
-    for node in state.StreamlitFlowState.get().nodes:
+    for node in state.StreamlitFlowDiagram.get().nodes:
         node.draggable = state.IsEditable.get()
 
         if isinstance(node, streamlit_flow.MarkdownNode):
@@ -165,7 +215,7 @@ def render(
             except AssignedDevice.device.RelatedObjectDoesNotExist:
                 node.content = "Configure in sidebar"
 
-        if node == state.StreamlitFlowSelected.get():
+        if node.id == state.StreamlitFlowSelectedID.get():
             node.style = {
                 "width": "auto",
                 "height": "auto",
@@ -179,23 +229,26 @@ def render(
                 "height": "auto",
             }
 
-    for edge in state.StreamlitFlowState.get().edges:
+    for edge in state.StreamlitFlowDiagram.get().edges:
         device_connection = state.DeviceConnectionByEdgeID.get()[edge.id]
 
         edge.label = f"Distance: {device_connection.distance}"
         # edge.label_show_bg = True
         edge.label_style = {"color": "black"}
 
-        if edge == state.StreamlitFlowSelected.get():
+        if edge.id == state.StreamlitFlowSelectedID.get():
             edge.style = {"stroke": "red"}
         else:
             edge.style = {"stroke": "white"}
 
+    print("BEFORE")
+    print([handle.id for handle in state.StreamlitFlowDiagram.get().handles])
+
     # Create the canvas
-    state.StreamlitFlowState.set(
+    state.StreamlitFlowDiagram.set(
         streamlit_flow.render(
             "workcell_device_diagram",
-            state.StreamlitFlowState.get(),
+            state.StreamlitFlowDiagram.get(),
             allow_new_edges=state.IsEditable.get(),
             get_node_on_click=state.IsEditable.get(),
             get_edge_on_click=state.IsEditable.get(),
@@ -204,11 +257,14 @@ def render(
         ),
     )
 
+    print("AFTER")
+    print([handle.id for handle in state.StreamlitFlowDiagram.get().handles])
+
     # Capture new edges
-    for edge in state.StreamlitFlowState.get().edges:
+    for edge in state.StreamlitFlowDiagram.get().edges:
         if edge.id not in state.DeviceConnectionByEdgeID.get():
-            source_assigned_device = state.AssignedDeviceByNodeID.get()[edge.source_node.id]
-            target_assigned_device = state.AssignedDeviceByNodeID.get()[edge.target_node.id]
+            source_assigned_device = state.AssignedDeviceByNodeID.get()[edge.source_node_id]
+            target_assigned_device = state.AssignedDeviceByNodeID.get()[edge.target_node_id]
 
             new_device_connection = DeviceConnection(
                 device_1=source_assigned_device,
@@ -218,13 +274,13 @@ def render(
 
             state.DeviceConnectionByEdgeID.get()[edge.id] = new_device_connection
 
-            state.StreamlitFlowState.get().selected = edge
+            state.StreamlitFlowDiagram.get().selected_id = edge.id
 
     if state.IsEditable.get():
-        selected = state.StreamlitFlowState.get().selected
-        if selected is not None:
-            state.StreamlitFlowSelected.set(selected)
-            state.StreamlitFlowState.get().selected = None
+        selected_id = state.StreamlitFlowDiagram.get().selected_id
+        if selected_id is not None:
+            state.StreamlitFlowSelectedID.set(selected_id)
+            state.StreamlitFlowDiagram.get().selected_id = None
 
             state.ForceUpdate.set(True)
 
@@ -232,14 +288,25 @@ def render(
 
     if state.IsEditable.get():
         with streamlit.sidebar:
-            selected = state.StreamlitFlowSelected.get()
-            if selected is None:
+            selected_id = state.StreamlitFlowSelectedID.get()
+            if selected_id is None:
                 streamlit.title("Canvas Configuration")
 
-                streamlit.button("Add Device", width=100, on_click=callback_button_add_device, args=(workcell,))
+                streamlit.button(
+                    "Add Spatial Device",
+                    width=220,
+                    on_click=callback_button_add_spatial_device,
+                    args=(workcell,),
+                )
+                streamlit.button(
+                    "Add Material Device",
+                    width=220,
+                    on_click=callback_button_add_material_device,
+                    args=(workcell,),
+                )
 
-            elif selected.id in state.AssignedDeviceByNodeID.get():
-                assigned_device = state.AssignedDeviceByNodeID.get()[selected.id]
+            elif selected_id in state.AssignedDeviceByNodeID.get():
+                assigned_device = state.AssignedDeviceByNodeID.get()[selected_id]
 
                 streamlit.title("Node Configuration")
 
@@ -269,8 +336,8 @@ def render(
                     streamlit.button("Deselect", width=100, on_click=callback_button_deselect)
                     streamlit.button("Delete", width=100, on_click=callback_button_delete_node)
 
-            elif selected.id in state.DeviceConnectionByEdgeID.get():
-                device_connection = state.DeviceConnectionByEdgeID.get()[selected.id]
+            elif selected_id in state.DeviceConnectionByEdgeID.get():
+                device_connection = state.DeviceConnectionByEdgeID.get()[selected_id]
 
                 streamlit.title("Edge Configuration")
 

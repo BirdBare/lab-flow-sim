@@ -63,6 +63,40 @@ class HandleByDeviceCategoryByPosition(
         return SessionStateManager.key(f"{KEY_PREFIX}_handle_by_device_category_by_position")
 
 
+class MaterialNodeIDs(SessionStateManager.SessionStateItem[list[uuid.UUID]]):
+    @classmethod
+    def get(cls) -> list[uuid.UUID]:
+        if cls.key() not in streamlit.session_state:
+            cls.set([])
+
+        return streamlit.session_state[cls.key()]
+
+    @classmethod
+    def set(cls, value: list[uuid.UUID]) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_material_node_ids")
+
+
+class SpatialNodeIDs(SessionStateManager.SessionStateItem[list[uuid.UUID]]):
+    @classmethod
+    def get(cls) -> list[uuid.UUID]:
+        if cls.key() not in streamlit.session_state:
+            cls.set([])
+
+        return streamlit.session_state[cls.key()]
+
+    @classmethod
+    def set(cls, value: list[uuid.UUID]) -> None:
+        streamlit.session_state[cls.key()] = value
+
+    @classmethod
+    def key(cls) -> SessionStateManager.key:
+        return SessionStateManager.key(f"{KEY_PREFIX}_spatial_node_ids")
+
+
 class StreamlitFlowDiagram(SessionStateManager.SessionStateItem[_StreamlitFlowDiagram]):
     @classmethod
     def get(cls) -> _StreamlitFlowDiagram:

@@ -12,7 +12,6 @@ from orm.workcell.models import AssignedDevice, DeviceConnection, Workcell
 
 
 def build_streamlit_flow_state(workcell: Workcell):
-    print("build")
     state.StreamlitFlowSelectedID.set(None)
 
     #
@@ -109,6 +108,7 @@ def callback_button_add_material_device(workcell: Workcell):
 
     state.AssignedDeviceByNodeID.get()[new_node.id] = new_assigned_device
     state.StreamlitFlowDiagram.get().nodes.append(new_node)
+    state.MaterialNodeIDs.get().append(new_node.id)
 
     state.StreamlitFlowSelectedID.set(new_node.id)
 
@@ -124,6 +124,7 @@ def callback_button_add_spatial_device(workcell: Workcell):
 
     state.AssignedDeviceByNodeID.get()[new_node.id] = new_assigned_device
     state.StreamlitFlowDiagram.get().nodes.append(new_node)
+    state.SpatialNodeIDs.get().append(new_node.id)
 
     state.StreamlitFlowSelectedID.set(new_node.id)
 
@@ -170,6 +171,8 @@ def render(
         state.IsEditable.key(),
         state.ForceUpdate.key(),
         state.HandleByDeviceCategoryByPosition.key(),
+        state.MaterialNodeIDs.key(),
+        state.SpatialNodeIDs.key(),
         state.StreamlitFlowDiagram.key(),
         state.StreamlitFlowSelectedID.key(),
         state.AssignedDeviceByNodeID.key(),
@@ -213,7 +216,10 @@ def render(
             try:
                 node.content = state.AssignedDeviceByNodeID.get()[node.id].device.name
             except AssignedDevice.device.RelatedObjectDoesNotExist:
-                node.content = "Configure in sidebar"
+                if node.id in state.SpatialNodeIDs.get():
+                    node.content = "Spatial Device<br>Configure in sidebar"
+                else:
+                    node.content = "Material Device<br>Configure in sidebar"
 
         if node.id == state.StreamlitFlowSelectedID.get():
             node.style = {
@@ -241,9 +247,6 @@ def render(
         else:
             edge.style = {"stroke": "white"}
 
-    print("BEFORE")
-    print([handle.id for handle in state.StreamlitFlowDiagram.get().handles])
-
     # Create the canvas
     state.StreamlitFlowDiagram.set(
         streamlit_flow.render(
@@ -256,9 +259,6 @@ def render(
             show_controls=True,
         ),
     )
-
-    print("AFTER")
-    print([handle.id for handle in state.StreamlitFlowDiagram.get().handles])
 
     # Capture new edges
     for edge in state.StreamlitFlowDiagram.get().edges:
@@ -310,7 +310,10 @@ def render(
 
                 streamlit.title("Node Configuration")
 
-                devices = list(Device.objects.all())
+                if selected_id in state.SpatialNodeIDs.get():
+                    devices = list(Device.objects.filter(category="Spatial").all())
+                else:
+                    devices = list(Device.objects.filter(category="Material").all())
 
                 try:
                     device = assigned_device.device
